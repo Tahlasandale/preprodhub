@@ -32,12 +32,18 @@
     .meta { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
 
     .news img { max-width: 100%; height: auto; border-radius: 4px; margin-bottom: 8px; object-fit: cover; }
-    .share-button { margin-top: 8px; font-size: 12px; padding: 4px 6px; align-self: flex-start; }
 
-    .cursor::after { content: "▌"; margin-left: 6px; animation: blink 1s steps(1,end) infinite; }
     @keyframes blink { 50% { opacity: 0; } }
 
     footer { text-align: center; font-size: 14px; padding: 40px 0; }
+
+    /* Modal styles */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .modal { background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: 4px; width: min(480px, 92vw); padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    .modal header { font-weight: 700; margin-bottom: 10px; border-bottom: 1px dotted var(--border); padding-bottom: 6px; }
+    .modal .row { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; }
+    .modal input { border: 1px solid var(--border); background: var(--bg); color: var(--fg); padding: 8px; font-family: inherit; }
+    .modal .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
 
     @media(max-width: 600px) {
       h1 { font-size: 22px; margin-top: 12px; }
@@ -45,14 +51,18 @@
       .news h2 { font-size: 14px; }
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabaseClient.js"></script>
 </head>
 <body>
   <div class="container" id="container">
-    <h1>📰 Actus Tech <span class="cursor"></span></h1>
-    <p class="sub">Scroll infini continu avec partage natif et images intégrées de chaque flux.</p>
+    <header>
+      <h1>📰 Actus Tech <span class="cursor"></span></h1>
+      <p class="sub">Scroll infini continu avec partage natif et images intégrées de chaque flux.</p>
+    </header>
 
     <div class="controls" id="controls">
-      <button id="refreshBtn">🔄 Rafraîchir</button>
+      <button id="refreshBtn"> Rafraîchir</button>
       <label for="filter">Filtre :</label>
       <select id="filter">
         <option value="all">Toutes les sources</option>
@@ -64,27 +74,63 @@
         <option value="www.actuia.com">Actuia Hardware and Co</option>
         <option value="web.developpez.com">Développez.com</option>
       </select>
+      <button id="addFeedBtn" title="Ajouter un flux">＋</button>
     </div>
 
     <div id="news-container"></div>
+
+    <!-- Add Feed Modal -->
+    <div id="addFeedBackdrop" class="modal-backdrop" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="addFeedTitle">
+        <header id="addFeedTitle">Ajouter un flux RSS</header>
+        <div class="row">
+          <label for="feedUrl">URL du flux</label>
+          <input id="feedUrl" type="url" placeholder="https://exemple.com/feed" required />
+        </div>
+        <div class="row">
+          <label for="feedName">Nom (optionnel)</label>
+          <input id="feedName" type="text" placeholder="Nom du flux" />
+        </div>
+        <div class="actions">
+          <button id="cancelAddFeed">Annuler</button>
+          <button id="confirmAddFeed">Ajouter</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <script>
-    const FEEDS = [
-      "https://www.frandroid.com/feed",
-      "https://korben.info/feed",
-      "https://raspberrytips.fr/feed/",
-      "https://www.gamekult.com/feeds/actu.html",
-      "https://www.journaldugeek.com/feed",
-      "https://www.actuia.com/feed",
-      "https://web.developpez.com/index/rss"
-    ];
-
+    // FEEDS dynamiques via Supabase `user_feeds`
+    let FEEDS = [];
     let allFeeds = [];
     let articlesFlat = [];
     let loadedCount = 0;
     const BATCH_SIZE = 10;
     const container = document.getElementById('news-container');
+
+    async function loadUserFeeds() {
+      if (!window.sb) {
+        console.error('Supabase non initialisé.');
+        return [];
+      }
+      const { data: { user } } = await window.sb.auth.getUser();
+      if (!user) {
+        alert('Veuillez vous connecter pour charger vos flux RSS personnalisés.');
+        return [];
+      }
+      const { data, error } = await window.sb
+        .from('user_feeds')
+        .select('feed_url, feed_name')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('Erreur chargement flux :', error);
+        return [];
+      }
+      return (data || [])
+        .filter(r => !!r.feed_url)
+        .map(r => ({ url: r.feed_url, name: r.feed_name || null }));
+    }
 
     async function getRSS(url) {
       const proxy = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(url);
@@ -100,14 +146,73 @@
       }));
     }
 
+    function refreshFilterOptions(sources) {
+      const select = document.getElementById('filter');
+      if (!select) return;
+      const current = select.value;
+      const opts = ['<option value="all">Toutes les sources</option>']
+        .concat(Array.from(new Set(sources)).map(src => `<option value="${src}">${src}</option>`));
+      select.innerHTML = opts.join('');
+      // Try to restore selection if still present, else default to 'all'
+      const stillExists = sources.includes(current);
+      select.value = stillExists ? current : 'all';
+    }
+
     async function loadNews() {
       container.innerHTML = '';
       allFeeds = [];
-      for (const feed of FEEDS) {
-        try { const articles = await getRSS(feed); allFeeds.push({ source: new URL(feed).hostname, articles }); } catch { allFeeds.push({ source: new URL(feed).hostname, articles: [] }); }
+
+      FEEDS = await loadUserFeeds();
+      if (!FEEDS.length) {
+        // Clean up UI and show empty state with CTA
+        const emptyHtml = `
+          <div class="news visible">
+            <h2>Aucun flux enregistré</h2>
+            <p>Ajoutez vos sources RSS pour commencer à voir des articles ici.</p>
+            <button id="ctaAddFeed">Ajouter un flux</button>
+          </div>`;
+        container.innerHTML = emptyHtml;
+        const cta = document.getElementById('ctaAddFeed');
+        if (cta) cta.addEventListener('click', openAddFeedModal);
+        // Filter dropdown must be empty when no sources exist
+        const select = document.getElementById('filter');
+        if (select) {
+          select.innerHTML = '';
+        }
+        return;
       }
+
+      // Build filter options from DB names (or hostname fallback)
+      const sourceNames = [];
+      for (const feed of FEEDS) {
+        const url = feed.url;
+        const hostname = (() => { try { return new URL(url).hostname; } catch { return url; } })();
+        const sourceName = feed.name || hostname;
+        if (!sourceNames.includes(sourceName)) sourceNames.push(sourceName);
+      }
+      refreshFilterOptions(sourceNames);
+
+      for (const feed of FEEDS) {
+        const url = feed.url;
+        const hostname = (() => { try { return new URL(url).hostname; } catch { return url; } })();
+        const sourceName = feed.name || hostname;
+        try {
+          const articles = await getRSS(url);
+          allFeeds.push({ source: sourceName, articles });
+        } catch {
+          allFeeds.push({ source: sourceName, articles: [] });
+        }
+      }
+
       articlesFlat = allFeeds.flatMap(f => f.articles);
-      articlesFlat.sort((a,b) => new Date(b.date) - new Date(a.date));
+      const currentFilter = (document.getElementById('filter')?.value) || 'all';
+      if (currentFilter === 'all') {
+        // Mélange aléatoire pour le mode "Toutes les sources"
+        shuffle(articlesFlat);
+      } else {
+        // Tri par date pour une source spécifique
+        articlesFlat.sort((a,b) => new Date(b.date) - new Date(a.date));
+      }
       loadedCount = 0;
       loadMoreArticles();
     }
@@ -118,7 +223,7 @@
       btn.textContent = 'Partager';
       btn.onclick = async () => {
         if (navigator.share) {
-          try { await navigator.share({ title: article.title, text: article.description, url: article.link }); } catch(e) { /* partage annulé/échoué, inutile de loguer */ }
+          try { await navigator.share({ title: article.title, text: article.description, url: article.link }); } catch(e) {}
         } else { alert('Partage natif non supporté sur ce navigateur.'); }
       };
       return btn;
@@ -129,7 +234,7 @@
       nextBatch.forEach(article => {
         const div = document.createElement('div');
         div.className = 'news';
-        let imgHTML = article.image ? `<img src="${article.image}" alt="${article.title}">` : '';
+        const imgHTML = article.image ? `<img src="${article.image}" alt="${article.title}">` : '';
         div.innerHTML = `${imgHTML}<h2><a href="${article.link}" target="_blank">${article.title}</a></h2><div class="meta">📅 ${article.date} — ${article.source}</div><p>${article.description}</p>`;
         div.appendChild(createShareButton(article));
         container.appendChild(div);
@@ -141,18 +246,76 @@
       else { articlesFlat = [...articlesFlat, ...articlesFlat]; setTimeout(loadMoreArticles, 500); }
     }
 
+    // Randomize helper (Fisher-Yates)
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
     document.getElementById('refreshBtn').addEventListener('click', loadNews);
     document.getElementById('filter').addEventListener('change', () => {
       const filter = document.getElementById('filter').value;
-      if (filter === 'all') { articlesFlat = allFeeds.flatMap(f => f.articles); }
-      else { articlesFlat = allFeeds.filter(f => f.source === filter).flatMap(f => f.articles); }
-      articlesFlat.sort((a,b) => new Date(b.date) - new Date(a.date));
+      if (filter === 'all') {
+        articlesFlat = allFeeds.flatMap(f => f.articles);
+        shuffle(articlesFlat);
+      } else {
+        articlesFlat = allFeeds.filter(f => f.source === filter).flatMap(f => f.articles);
+        articlesFlat.sort((a,b) => new Date(b.date) - new Date(a.date));
+      }
       loadedCount = 0;
       container.innerHTML = '';
       loadMoreArticles();
     });
 
+    // Modal logic
+    const addFeedBackdrop = document.getElementById('addFeedBackdrop');
+    const addFeedBtn = document.getElementById('addFeedBtn');
+    const cancelAddFeed = document.getElementById('cancelAddFeed');
+    const confirmAddFeed = document.getElementById('confirmAddFeed');
+    const inputFeedUrl = document.getElementById('feedUrl');
+    const inputFeedName = document.getElementById('feedName');
+
+    function openAddFeedModal() {
+      if (addFeedBackdrop) {
+        addFeedBackdrop.style.display = 'flex';
+        setTimeout(() => inputFeedUrl && inputFeedUrl.focus(), 0);
+      }
+    }
+    function closeAddFeedModal() {
+      if (addFeedBackdrop) addFeedBackdrop.style.display = 'none';
+      if (inputFeedUrl) inputFeedUrl.value = '';
+      if (inputFeedName) inputFeedName.value = '';
+    }
+    if (addFeedBtn) addFeedBtn.addEventListener('click', openAddFeedModal);
+    if (cancelAddFeed) cancelAddFeed.addEventListener('click', closeAddFeedModal);
+    if (addFeedBackdrop) addFeedBackdrop.addEventListener('click', (e) => {
+      if (e.target === addFeedBackdrop) closeAddFeedModal();
+    });
+    if (confirmAddFeed) confirmAddFeed.addEventListener('click', async () => {
+      const url = (inputFeedUrl?.value || '').trim();
+      const name = (inputFeedName?.value || '').trim();
+      if (!url) return alert('Veuillez saisir une URL de flux valide');
+      await addFeed(url, name);
+      closeAddFeedModal();
+    });
+
+    // Optionnel: ajout d'un flux
+    async function addFeed(url, name) {
+      if (!window.sb) return alert('Supabase non initialisé');
+      const { data: { user } } = await window.sb.auth.getUser();
+      if (!user) return alert('Veuillez vous connecter');
+      const { error } = await window.sb
+        .from('user_feeds')
+        .insert({ user_id: user.id, feed_url: url, feed_name: name });
+      if (error) { console.error('Erreur ajout flux :', error); return alert('Erreur lors de l\'ajout du flux'); }
+      await loadNews();
+    }
+
     loadNews();
   </script>
+
 </body>
 </html>
