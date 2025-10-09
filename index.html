@@ -481,21 +481,17 @@
         <p>CYBER HUB © 2085</p>
     </footer>
 
-    <!-- Supabase and Auth Scripts -->
+    <!-- Supabase, Utils and Auth Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabaseClient.js"></script>
+    <script src="js/utils.js"></script>
     <script src="js/auth.js"></script>
 
     <script>
         function updateClock() {
             const now = new Date();
-            
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
-            
-            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
-            
+            const hhmmss = (window.Utils ? Utils.formatTimeHMS(now) : `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`);
+            document.getElementById('clock').textContent = hhmmss;
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             const dateStr = now.toLocaleDateString('fr-FR', options).toUpperCase();
             document.getElementById('date').textContent = dateStr;

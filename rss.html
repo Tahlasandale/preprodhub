@@ -118,7 +118,7 @@
       btn.textContent = 'Partager';
       btn.onclick = async () => {
         if (navigator.share) {
-          try { await navigator.share({ title: article.title, text: article.description, url: article.link }); } catch(e) { console.log('Partage annulé ou échoué', e); }
+          try { await navigator.share({ title: article.title, text: article.description, url: article.link }); } catch(e) { /* partage annulé/échoué, inutile de loguer */ }
         } else { alert('Partage natif non supporté sur ce navigateur.'); }
       };
       return btn;

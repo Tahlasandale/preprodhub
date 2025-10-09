@@ -499,6 +499,7 @@
         </div>
     </div>
 
+    <script src="js/utils.js"></script>
     <script>
         class SunsetTimer {
             constructor() {
@@ -579,10 +580,8 @@
 
             updateClock() {
                 const now = new Date();
-                const hours = String(now.getHours()).padStart(2, '0');
-                const minutes = String(now.getMinutes()).padStart(2, '0');
-                const seconds = String(now.getSeconds()).padStart(2, '0');
-                this.clockEl.textContent = `${hours}:${minutes}:${seconds}`;
+                const hhmmss = (window.Utils ? Utils.formatTimeHMS(now) : `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`);
+                this.clockEl.textContent = hhmmss;
             }
 
             addTask() {
@@ -861,7 +860,7 @@
 
             playSound() {
                 if (this.settings.soundEnabled) {
-                    this.audio.play().catch(e => console.log('Audio play failed:', e));
+                    this.audio.play().catch(() => {});
                 }
             }
 
