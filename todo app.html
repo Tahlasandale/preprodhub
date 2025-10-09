@@ -44,50 +44,51 @@
     li label { flex: 1; cursor: pointer; user-select: none; }
     .counter { margin-bottom: 1rem; opacity: 0.8; }
   </style>
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  <!-- Use shared Supabase and auth helpers (consistent with the project) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/auth.js"></script>
 
-    // ✅ TES VALEURS EXISTANTES
-    const SUPABASE_URL = "https://xcawojxvtxdcnwkhywmn.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjYXdvanh2dHhkY253a2h5d21uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3MTI1MzMsImV4cCI6MjA3MjI4ODUzM30.gF46vM9cKso-hDKZODrqDwZOAhQGjPlHqPhBn9si9EI";
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
+    <script>
+    // Configuration
+    const TABLE = 'taaaches';
     let tasks = [];
     let completedCount = 0;
+    let CURRENT_USER_ID = null;
 
     async function loadTasks() {
-      console.log("[LOAD] Tâches...");
+      if (!window.sb || !CURRENT_USER_ID) return;
       try {
-        const { data, error } = await supabase
-          .from("todo")
-          .select("id, content, done, position")
-          .eq("done", false)
-          .order("position", { ascending: true });
+        const { data, error } = await window.sb
+          .from(TABLE)
+          .select('id, title, completed, "order"')
+          .eq('user_id', CURRENT_USER_ID)
+          .eq('completed', false)
+          .order('order', { ascending: true });
 
         if (error) throw error;
-        tasks = data || [];
+        tasks = (data || []).map(row => ({ id: row.id, title: row.title, order: row.order }));
 
-        // compteur terminées
-        const { count } = await supabase
-          .from("todo")
-          .select("id", { count: "exact", head: true })
-          .eq("done", true);
-
+        const { count, error: countErr } = await window.sb
+          .from(TABLE)
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', CURRENT_USER_ID)
+          .eq('completed', true);
+        if (countErr) throw countErr;
         completedCount = count || 0;
         render();
       } catch (err) {
-        console.error("[LOAD] Erreur:", err);
+        console.error('[LOAD] Erreur:', err);
       }
     }
 
     function render() {
-      const list = document.getElementById("tasks");
-      const counter = document.getElementById("counter");
+      const list = document.getElementById('tasks');
+      const counter = document.getElementById('counter');
       counter.textContent = `Tâches terminées : ${completedCount}`;
 
       if (!tasks.length) {
-        list.innerHTML = "<li>Aucune tâche à faire 🎉</li>";
+        list.innerHTML = '<li>Aucune tâche à faire 🎉</li>';
         return;
       }
 
@@ -95,24 +96,24 @@
         t => `
           <li draggable="true" data-id="${t.id}">
             <input type="checkbox" data-id="${t.id}">
-            <label>${t.content}</label>
+            <label>${t.title}</label>
           </li>`
-      ).join("");
+      ).join('');
 
-      // Checkbox handler
+      // Checkbox handler → mark completed
       document.querySelectorAll('#tasks input[type="checkbox"]').forEach(cb => {
         cb.onchange = async (e) => {
           const id = e.target.dataset.id;
-          console.log("[CHECK] id=", id);
           try {
-            const { error } = await supabase
-              .from("todo")
-              .update({ done: true })
-              .eq("id", id);
+            const { error } = await window.sb
+              .from(TABLE)
+              .update({ completed: true })
+              .eq('id', id)
+              .eq('user_id', CURRENT_USER_ID);
             if (error) throw error;
             loadTasks();
           } catch (err) {
-            console.error("[UPDATE] Erreur:", err);
+            console.error('[UPDATE] Erreur:', err);
           }
         };
       });
@@ -121,49 +122,53 @@
       setupDragAndDrop();
     }
 
-    async function addTask(content) {
+    async function addTask(title) {
+      if (!window.sb || !CURRENT_USER_ID) return;
       try {
-        // trouver la position max actuelle
-        const maxPos = tasks.length ? Math.max(...tasks.map(t => t.position || 0)) : 0;
-        const newPos = maxPos + 1;
+        // find current max order
+        const maxOrder = tasks.length ? Math.max(...tasks.map(t => t.order || 0)) : 0;
+        const newOrder = maxOrder + 1;
 
-        const { error } = await supabase
-          .from("todo")
-          .insert([{ content, done: false, position: newPos }]);
+        const { error } = await window.sb
+          .from(TABLE)
+          .insert([{ title, completed: false, order: newOrder, user_id: CURRENT_USER_ID }]);
 
         if (error) throw error;
         loadTasks();
       } catch (err) {
-        console.error("[INSERT] Erreur:", err);
+        console.error('[INSERT] Erreur:', err);
       }
     }
 
     function setupDragAndDrop() {
-      const list = document.getElementById("tasks");
+      const list = document.getElementById('tasks');
       let dragging;
 
-      list.querySelectorAll("li").forEach(li => {
-        li.addEventListener("dragstart", () => {
+      list.querySelectorAll('li').forEach(li => {
+        li.addEventListener('dragstart', () => {
           dragging = li;
-          li.classList.add("dragging");
+          li.classList.add('dragging');
         });
-        li.addEventListener("dragend", async () => {
-          li.classList.remove("dragging");
+        li.addEventListener('dragend', async () => {
+          li.classList.remove('dragging');
           dragging = null;
 
-          // Sauvegarder nouvel ordre en DB
-          const ids = Array.from(list.children).map((li, i) => ({
-            id: li.dataset.id,
-            pos: i + 1
-          }));
-          console.log("[DRAG] Nouvel ordre:", ids);
-
-          for (const item of ids) {
-            await supabase.from("todo").update({ position: item.pos }).eq("id", item.id);
+          // Save new order to DB
+          const ids = Array.from(list.children).map((li, i) => ({ id: li.dataset.id, pos: i + 1 }));
+          try {
+            for (const item of ids) {
+              await window.sb
+                .from(TABLE)
+                .update({ order: item.pos })
+                .eq('id', item.id)
+                .eq('user_id', CURRENT_USER_ID);
+            }
+            loadTasks();
+          } catch (err) {
+            console.error('[REORDER] Erreur:', err);
           }
-          loadTasks();
         });
-        li.addEventListener("dragover", e => {
+        li.addEventListener('dragover', e => {
           e.preventDefault();
           const target = li;
           if (target === dragging) return;
@@ -174,11 +179,16 @@
       });
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("form").onsubmit = (e) => {
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Require auth and resolve current user id
+      await AuthHelpers.requireAuth('login.html');
+      const session = await AuthHelpers.getSession();
+      CURRENT_USER_ID = session?.user?.id;
+
+      document.getElementById('form').onsubmit = (e) => {
         e.preventDefault();
-        const content = document.getElementById("content").value.trim();
-        if (content) addTask(content);
+        const title = document.getElementById('content').value.trim();
+        if (title) addTask(title);
         e.target.reset();
       };
       loadTasks();

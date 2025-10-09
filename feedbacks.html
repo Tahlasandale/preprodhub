@@ -316,25 +316,28 @@
     }
   </style>
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  <!-- Supabase client and auth helpers -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/auth.js"></script>
 
-    const SUPABASE_URL = "https://xcawojxvtxdcnwkhywmn.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjYXdvanh2dHhkY253a2h5d21uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY3MTI1MzMsImV4cCI6MjA3MjI4ODUzM30.gF46vM9cKso-hDKZODrqDwZOAhQGjPlHqPhBn9si9EI";
+  <script>
+    // Utilise le client Supabase existant (window.sb) et AuthHelpers
     const IMGBB_API_KEY = "78e05cd74f26e3e31a04ba7366739c98";
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    let feedbacks = [], showingAll = false;
+    let feedbacks = [];
+    let showingAll = false;
+    let currentSession = null;
 
     function isImageUrl(content) {
       return typeof content === "string" && content.match(/^https?:\/\/.+\.(jpg|jpeg|png|webp)$/i);
     }
 
     async function loadFeedbacks(limit = 3) {
-      let query = supabase
-        .from("Feedback")
-        .select("content,created_at")
+      if (!window.sb || !currentSession) return;
+      let query = window.sb
+        .from("Feedbaaack")
+        .select("content, created_at")
+        .eq("user_id", currentSession.user.id)
         .order("created_at", { ascending: false });
       if (!showingAll) query = query.limit(limit);
       const { data, error } = await query;
@@ -345,12 +348,18 @@
       }
       feedbacks = data || [];
       render();
-      document.getElementById("seeall").style.display =
-        feedbacks.length === limit && !showingAll ? "block" : "none";
+      const seeAllBtn = document.getElementById("seeall");
+      if (seeAllBtn) {
+        seeAllBtn.style.display = feedbacks.length === limit && !showingAll ? "block" : "none";
+      }
     }
 
     function render() {
       const box = document.getElementById("feedbacks");
+      if (!currentSession) {
+        box.innerHTML = "<div style='color:#ff4ecd;'>Connecte-toi pour voir et enregistrer tes feedbacks.</div>";
+        return;
+      }
       if (!feedbacks.length) {
         box.innerHTML = "<div style='color:#ff4ecd;'>Aucun feedback enregistré.</div>";
         return;
@@ -376,7 +385,7 @@
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = error => reject(error);
+        reader.onerror = (error) => reject(error);
       });
     }
 
@@ -402,37 +411,79 @@
       return data.data.url;
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("form").onsubmit = async (e) => {
-        e.preventDefault();
-        const text = document.getElementById("content").value.trim();
-        const imageInput = document.getElementById("img").files[0];
-        let content = text;
-        if (imageInput) {
-          try {
-            content = await uploadImageToImgBB(imageInput);
-          } catch (err) {
-            alert("Erreur upload image : " + err.message);
+    document.addEventListener("DOMContentLoaded", async () => {
+      // Init nav + session
+      if (window.AuthHelpers && typeof window.AuthHelpers.initAuthNav === "function") {
+        await window.AuthHelpers.initAuthNav();
+      }
+      currentSession = window.AuthHelpers ? await window.AuthHelpers.getSession() : null;
+
+      // React to auth changes
+      if (window.sb && window.sb.auth && typeof window.sb.auth.onAuthStateChange === "function") {
+        window.sb.auth.onAuthStateChange((_event, session) => {
+          currentSession = session;
+          // Toggle form availability
+          const disabled = !currentSession;
+          const form = document.getElementById("form");
+          if (form) {
+            [...form.elements].forEach(el => (el.disabled = disabled));
+          }
+          showingAll = false;
+          loadFeedbacks();
+        });
+      }
+
+      // Disable form if not logged in on first load
+      const form = document.getElementById("form");
+      if (form && !currentSession) {
+        [...form.elements].forEach(el => (el.disabled = true));
+      }
+
+      // Submit handler
+      if (form) {
+        form.onsubmit = async (e) => {
+          e.preventDefault();
+          if (!currentSession) {
+            alert("Tu dois être connecté pour enregistrer un feedback.");
+            window.location.href = 'login.html';
             return;
           }
-        } else if (!text) {
-          alert("Ajoute un texte ou choisis une image !");
-          return;
-        }
-        const { error } = await supabase.from("Feedback").insert([{ content }]);
-        if (error) {
-          console.error("Erreur ajout feedback :", error);
-          alert("Erreur ajout feedback : " + error.message);
-          return;
-        }
-        document.getElementById("form").reset();
-        showingAll = false;
-        loadFeedbacks();
-      };
-      document.getElementById("seeall").onclick = () => {
-        showingAll = true;
-        loadFeedbacks(99);
-      };
+          const text = document.getElementById("content").value.trim();
+          const imageInput = document.getElementById("img").files[0];
+          let content = text;
+          if (imageInput) {
+            try {
+              content = await uploadImageToImgBB(imageInput);
+            } catch (err) {
+              alert("Erreur upload image : " + err.message);
+              return;
+            }
+          } else if (!text) {
+            alert("Ajoute un texte ou choisis une image !");
+            return;
+          }
+          const { error } = await window.sb
+            .from("Feedbaaack")
+            .insert([{ content, user_id: currentSession.user.id }]);
+          if (error) {
+            console.error("Erreur ajout feedback :", error);
+            alert("Erreur ajout feedback : " + error.message);
+            return;
+          }
+          form.reset();
+          showingAll = false;
+          loadFeedbacks();
+        };
+      }
+
+      const seeAllBtn = document.getElementById("seeall");
+      if (seeAllBtn) {
+        seeAllBtn.onclick = () => {
+          showingAll = true;
+          loadFeedbacks(99);
+        };
+      }
+
       loadFeedbacks();
     });
   </script>

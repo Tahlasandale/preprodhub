@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connexion</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <style>
+    body { font-family: Arial, sans-serif; background:#0a0a0a; color:#00ff41; padding:20px; }
+    .container { max-width:420px; margin:0 auto; background:#111; border:1px solid #00ff41; padding:24px; }
+    h1 { text-align:center; margin-bottom:16px; }
+    label { display:block; margin:12px 0 6px; }
+    input { width:100%; padding:10px; background:#1a1a1a; border:1px solid #333; color:#fff; }
+    button { width:100%; margin-top:16px; padding:10px; background:#00ff41; color:#000; border:none; cursor:pointer; font-weight:700; }
+    .msg { margin-top:12px; min-height:20px; }
+    a { color:#ffff00; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/auth.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Se connecter</h1>
+    <form id="login-form">
+      <label for="email">Email</label>
+      <input id="email" type="email" required placeholder="you@example.com" />
+
+      <label for="password">Mot de passe</label>
+      <input id="password" type="password" required placeholder="Votre mot de passe" />
+
+      <button type="submit">Connexion</button>
+      <div class="msg" id="msg"></div>
+    </form>
+    <p>Pas de compte ? <a href="register.html">Créer un compte</a></p>
+  </div>
+
+  <script>
+    (function(){
+      const form = document.getElementById('login-form');
+      const msg = document.getElementById('msg');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        msg.textContent = '';
+
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+
+        if (!email || !password) {
+          msg.textContent = 'Veuillez remplir tous les champs';
+          return;
+        }
+
+        try {
+          const { data, error } = await AuthHelpers.signInWithEmailPassword(email, password);
+          if (error) {
+            msg.textContent = 'Email ou mot de passe incorrect';
+            return;
+          }
+
+          // Redirect destination if provided
+          const params = new URLSearchParams(window.location.search);
+          const redirect = params.get('redirect') || 'index.html';
+          msg.textContent = 'Connexion réussie. Redirection...';
+          setTimeout(() => { window.location.href = redirect; }, 800);
+        } catch (err) {
+          msg.textContent = err.message || 'Erreur lors de la connexion';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inscription</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <style>
+    body { font-family: Arial, sans-serif; background:#0a0a0a; color:#00ff41; padding:20px; }
+    .container { max-width:420px; margin:0 auto; background:#111; border:1px solid #00ff41; padding:24px; }
+    h1 { text-align:center; margin-bottom:16px; }
+    label { display:block; margin:12px 0 6px; }
+    input { width:100%; padding:10px; background:#1a1a1a; border:1px solid #333; color:#fff; }
+    button { width:100%; margin-top:16px; padding:10px; background:#00ff41; color:#000; border:none; cursor:pointer; font-weight:700; }
+    .msg { margin-top:12px; min-height:20px; }
+    a { color:#ffff00; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/auth.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Créer un compte</h1>
+    <form id="register-form">
+      <label for="email">Email</label>
+      <input id="email" type="email" required placeholder="you@example.com" />
+
+      <label for="password">Mot de passe</label>
+      <input id="password" type="password" required minlength="8" placeholder="Au moins 8 caractères" />
+
+      <button type="submit">S'inscrire</button>
+      <div class="msg" id="msg"></div>
+    </form>
+    <p>Déjà un compte ? <a href="login.html">Se connecter</a></p>
+  </div>
+
+  <script>
+    (function(){
+      const form = document.getElementById('register-form');
+      const msg = document.getElementById('msg');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        msg.textContent = '';
+
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+
+        // Simple client validation
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          msg.textContent = 'Email invalide';
+          return;
+        }
+        if (password.length < 8) {
+          msg.textContent = 'Mot de passe trop court (min 8)';
+          return;
+        }
+
+        try {
+          const { error } = await AuthHelpers.signUpWithEmailPassword(email, password);
+          if (error) {
+            msg.textContent = error.message;
+            return;
+          }
+          msg.textContent = 'Inscription réussie. Redirection...';
+          setTimeout(() => { window.location.href = 'login.html'; }, 1200);
+        } catch (err) {
+          msg.textContent = err.message || 'Erreur lors de l\'inscription';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

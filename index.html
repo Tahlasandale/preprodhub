@@ -392,14 +392,21 @@
     </div>
 
     <nav class="navbar">
-        <a href="#" onclick="openApp('https://tahlasandale.github.io/MaGazette/todo%20app.html')">TODO</a>
-        <a href="#" onclick="openApp('https://tahlasandale.github.io/MaGazette/feedbacks.html')">FEEDBACK</a>
-        <a href="#" onclick="openApp('https://tahlasandale.github.io/MaGazette/rss.html')">RSS</a>
-        <a href="#" onclick="openApp('https://tahlasandale.github.io/MaGazette/meteo.html')">MÉTÉO</a>
-        <a href="#" onclick="openApp('https://tahlasandale.github.io/MaGazette/toolbox.html')">TOOLBOX</a>
-        <a href="#" onclick="openApp('https://tahlasandale.github.io/MaGazette/SimpleTabHTML.html')">SIMPLETAB</a>
-        <a href="#" onclick="openApp('https://tahlasandale.github.io/MaGazette/dalyview.html')">DAILY</a>
+        <a href="#" onclick="openApp('todo app.html')">TODO</a>
+        <a href="#" onclick="openApp('feedbacks.html')">FEEDBACK</a>
+        <a href="#" onclick="openApp('rss.html')">RSS</a>
+        <a href="#" onclick="openApp('meteo.html')">MÉTÉO</a>
+        <a href="#" onclick="openApp('toolbox.html')">TOOLBOX</a>
+        <a href="#" onclick="openApp('SimpleTabHTML.html')">SIMPLETAB</a>
+        <a href="#" onclick="openApp('dalyview.html')">DAILY</a>
         <a href="#" onclick="openApp('https://pomofocus.io/')">POMODORO</a>
+        <a href="#" onclick="openApp('sunset-timer-app.html')">SUNSET</a>
+
+        <!-- Auth Links -->
+        <a id="nav-login" href="login.html">LOGIN</a>
+        <a id="nav-register" href="register.html">REGISTER</a>
+        <a id="nav-account" href="account.html" style="display:none">ACCOUNT</a>
+        <a id="nav-logout" href="#" style="display:none">LOGOUT</a>
     </nav>
 
     <div class="clock-section">
@@ -424,37 +431,37 @@
     </section>
 
     <main class="apps-gallery">
-        <div class="app-card" onclick="openApp('https://tahlasandale.github.io/MaGazette/todo%20app.html')">
+        <div class="app-card" onclick="openApp('todo app.html')">
             <div class="app-icon">📝</div>
             <div class="app-title">Todo</div>
         </div>
 
-        <div class="app-card" onclick="openApp('https://tahlasandale.github.io/MaGazette/feedbacks.html')">
+        <div class="app-card" onclick="openApp('feedbacks.html')">
             <div class="app-icon">💬</div>
             <div class="app-title">Feedbacks</div>
         </div>
 
-        <div class="app-card" onclick="openApp('https://tahlasandale.github.io/MaGazette/rss.html')">
+        <div class="app-card" onclick="openApp('rss.html')">
             <div class="app-icon">📡</div>
             <div class="app-title">RSS</div>
         </div>
 
-        <div class="app-card" onclick="openApp('https://tahlasandale.github.io/MaGazette/meteo.html')">
+        <div class="app-card" onclick="openApp('meteo.html')">
             <div class="app-icon">⛅</div>
             <div class="app-title">Météo</div>
         </div>
 
-        <div class="app-card" onclick="openApp('https://tahlasandale.github.io/MaGazette/toolbox.html')">
+        <div class="app-card" onclick="openApp('toolbox.html')">
             <div class="app-icon">🧰</div>
             <div class="app-title">Toolbox</div>
         </div>
 
-        <div class="app-card" onclick="openApp('https://tahlasandale.github.io/MaGazette/SimpleTabHTML.html')">
+        <div class="app-card" onclick="openApp('SimpleTabHTML.html')">
             <div class="app-icon">🌐</div>
             <div class="app-title">SimpleTab</div>
         </div>
 
-        <div class="app-card" onclick="openApp('https://tahlasandale.github.io/MaGazette/dalyview.html')">
+        <div class="app-card" onclick="openApp('dalyview.html')">
             <div class="app-icon">📅</div>
             <div class="app-title">Daily View</div>
         </div>
@@ -463,11 +470,21 @@
             <div class="app-icon">🍅</div>
             <div class="app-title">Pomodoro</div>
         </div>
+
+        <div class="app-card" onclick="openApp('sunset-timer-app.html')">
+            <div class="app-icon">🌅</div>
+            <div class="app-title">Sunset Timer</div>
+        </div>
     </main>
 
     <footer class="footer">
         <p>CYBER HUB © 2085</p>
     </footer>
+
+    <!-- Supabase and Auth Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabaseClient.js"></script>
+    <script src="js/auth.js"></script>
 
     <script>
         function updateClock() {
@@ -497,23 +514,27 @@
                 switch(e.key) {
                     case '1':
                         e.preventDefault();
-                        openApp('https://tahlasandale.github.io/MaGazette/todo%20app.html');
+                        openApp('todo app.html');
                         break;
                     case '2':
                         e.preventDefault();
-                        openApp('https://tahlasandale.github.io/MaGazette/feedbacks.html');
+                        openApp('feedbacks.html');
                         break;
                     case '3':
                         e.preventDefault();
-                        openApp('https://tahlasandale.github.io/MaGazette/rss.html');
+                        openApp('rss.html');
                         break;
                     case '4':
                         e.preventDefault();
-                        openApp('https://tahlasandale.github.io/MaGazette/meteo.html');
+                        openApp('meteo.html');
                         break;
                     case '5':
                         e.preventDefault();
                         openApp('https://pomofocus.io/');
+                        break;
+                    case '6':
+                        e.preventDefault();
+                        openApp('sunset-timer-app.html');
                         break;
                 }
             }
@@ -545,6 +566,17 @@
                 cursor.remove();
             }, 100);
         });
+
+        // Init auth-aware navbar
+        if (window.AuthHelpers && typeof AuthHelpers.initAuthNav === 'function') {
+            AuthHelpers.initAuthNav();
+        } else {
+            window.addEventListener('load', () => {
+                if (window.AuthHelpers && typeof AuthHelpers.initAuthNav === 'function') {
+                    AuthHelpers.initAuthNav();
+                }
+            });
+        }
     </script>
 </body>
 </html>

@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sunset Timer - Organiseur de tâches</title>
+    <style>
+        :root {
+            --sunset-light: #FFDAB9;
+            --sunset-mid: #FFB86B;
+            --sunset-deep: #FF7E4A;
+            --accent: #FF6A00;
+            --text-primary: #2B2B2B;
+            --text-secondary: #4A4A4A;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --shadow: rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(180deg, var(--sunset-light) 0%, var(--sunset-mid) 50%, var(--sunset-deep) 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .clock {
+            font-size: 48px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-shadow: 0 2px 8px rgba(255, 255, 255, 0.5);
+        }
+
+        .active-task-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px var(--shadow);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .active-task-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .task-status {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .task-title {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .timer-display {
+            font-size: 64px;
+            font-weight: 700;
+            color: var(--accent);
+            margin: 20px 0;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .task-form {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 16px var(--shadow);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(255, 106, 0, 0.1);
+        }
+
+        input::placeholder {
+            color: #999;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 48px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 106, 0, 0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #e65f00;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(255, 106, 0, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--accent);
+            border: 2px solid var(--accent);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .task-list {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 4px 16px var(--shadow);
+        }
+
+        .task-list h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .task-items {
+            list-style: none;
+        }
+
+        .task-item {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 2px 8px var(--shadow);
+            cursor: move;
+            transition: all 0.3s ease;
+        }
+
+        .task-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px var(--shadow);
+        }
+
+        .task-item.dragging {
+            opacity: 0.5;
+        }
+
+        .task-item.in-progress {
+            border: 2px solid var(--accent);
+        }
+
+        .drag-handle {
+            cursor: grab;
+            color: var(--text-secondary);
+            font-size: 20px;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .task-content {
+            flex: 1;
+        }
+
+        .task-item-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .task-item-duration {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .task-delete {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 4px 8px;
+            transition: color 0.3s ease;
+        }
+
+        .task-delete:hover {
+            color: #f44336;
+        }
+
+        .settings-bar {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            padding: 16px;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+        }
+
+        .toggle-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            padding: 20px 28px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            max-width: 350px;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .toast-message {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        @media (max-width: 600px) {
+            .clock {
+                font-size: 36px;
+            }
+
+            .timer-display {
+                font-size: 48px;
+            }
+
+            .task-title {
+                font-size: 22px;
+            }
+
+            .form-row {
+                flex-direction: column;
+            }
+
+            .form-group {
+                min-width: 100%;
+            }
+
+            .toast {
+                left: 20px;
+                right: 20px;
+                bottom: 20px;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .importing-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .importing-overlay.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .importing-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .importing-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 106, 0, 0.2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header role="status" aria-live="polite">
+            <div class="clock" id="clock">00:00:00</div>
+        </header>
+
+        <main>
+            <section class="active-task-card" id="activeTaskCard">
+                <div class="task-status" id="taskStatus">Aucune tâche</div>
+                <div class="task-title" id="activeTaskTitle">Prêt à commencer</div>
+                <div class="timer-display" id="timerDisplay">00:00</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+            </section>
+
+            <div class="controls">
+                <button class="btn btn-primary" id="startBtn">▶ Démarrer</button>
+                <button class="btn btn-secondary" id="pauseBtn" disabled>⏸ Pause</button>
+                <button class="btn btn-secondary" id="stopBtn" disabled>⏹ Stop</button>
+            </div>
+
+            <form class="task-form" id="taskForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskTitle">Titre de la tâche</label>
+                        <input type="text" id="taskTitle" placeholder="Ex: Lecture article" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskDuration">Durée (minutes)</label>
+                        <input type="number" id="taskDuration" placeholder="Ex: 25" min="1" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">+ Ajouter</button>
+                </div>
+                <div class="form-row" style="margin-top: 12px;">
+                    <input type="file" id="import-csv-input" accept=".csv,text/csv" style="display: none;" aria-label="Sélectionner un fichier CSV">
+                    <button type="button" class="btn btn-primary" id="import-csv-btn" aria-label="Importer des tâches depuis un fichier CSV" style="width: 100%;">
+                        📄 Importer CSV
+                    </button>
+                </div>
+            </form>
+
+            <section class="task-list">
+                <h2>Liste des tâches</h2>
+                <ul class="task-items" id="taskItems">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <p>Aucune tâche pour le moment</p>
+                    </div>
+                </ul>
+            </section>
+
+            <div class="settings-bar">
+                <button class="toggle-btn active" id="soundToggle" title="Activer/désactiver le son">
+                    🔔 Son
+                </button>
+                <button class="toggle-btn active" id="autoStartToggle" title="Démarrer automatiquement la tâche suivante">
+                    ⏭ Auto
+                </button>
+                <button class="toggle-btn" id="notifToggle" title="Activer les notifications">
+                    🔔 Notifications
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <div class="toast" id="toast">
+        <div class="toast-title" id="toastTitle"></div>
+        <div class="toast-message" id="toastMessage"></div>
+    </div>
+
+    <div class="importing-overlay" id="importingOverlay" role="status" aria-live="polite">
+        <div class="importing-card">
+            <div class="importing-spinner"></div>
+            <div style="font-weight: 600; color: var(--text-primary);">Import en cours...</div>
+        </div>
+    </div>
+
+    <script>
+        class SunsetTimer {
+            constructor() {
+                this.tasks = [];
+                this.currentTaskIndex = -1;
+                this.timerInterval = null;
+                this.targetTimestamp = null;
+                this.isPaused = false;
+                this.settings = {
+                    soundEnabled: true,
+                    autoStartNext: true,
+                    notificationsEnabled: false
+                };
+                
+                this.audio = new Audio();
+                this.audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjGH0fPTgjMGHm7A7+OZURE';
+                
+                this.draggedElement = null;
+                
+                this.initElements();
+                this.loadFromStorage();
+                this.setupEventListeners();
+                this.updateClock();
+                this.renderTasks();
+                
+                setInterval(() => this.updateClock(), 1000);
+            }
+
+            initElements() {
+                this.clockEl = document.getElementById('clock');
+                this.taskStatusEl = document.getElementById('taskStatus');
+                this.activeTaskTitleEl = document.getElementById('activeTaskTitle');
+                this.timerDisplayEl = document.getElementById('timerDisplay');
+                this.progressFillEl = document.getElementById('progressFill');
+                this.startBtn = document.getElementById('startBtn');
+                this.pauseBtn = document.getElementById('pauseBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.taskForm = document.getElementById('taskForm');
+                this.taskItemsEl = document.getElementById('taskItems');
+                this.soundToggle = document.getElementById('soundToggle');
+                this.autoStartToggle = document.getElementById('autoStartToggle');
+                this.notifToggle = document.getElementById('notifToggle');
+                this.toastEl = document.getElementById('toast');
+                this.toastTitleEl = document.getElementById('toastTitle');
+                this.toastMessageEl = document.getElementById('toastMessage');
+                this.importCsvBtn = document.getElementById('import-csv-btn');
+                this.importCsvInput = document.getElementById('import-csv-input');
+                this.importingOverlay = document.getElementById('importingOverlay');
+            }
+
+            setupEventListeners() {
+                this.taskForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.addTask();
+                });
+
+                this.startBtn.addEventListener('click', () => this.start());
+                this.pauseBtn.addEventListener('click', () => this.pause());
+                this.stopBtn.addEventListener('click', () => this.stop());
+
+                this.soundToggle.addEventListener('click', () => this.toggleSound());
+                this.autoStartToggle.addEventListener('click', () => this.toggleAutoStart());
+                this.notifToggle.addEventListener('click', () => this.requestNotificationPermission());
+
+                this.importCsvBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.importCsvInput.click();
+                });
+                this.importCsvInput.addEventListener('change', (e) => this.handleCsvImport(e));
+
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden && this.timerInterval) {
+                        this.tick();
+                    }
+                });
+            }
+
+            updateClock() {
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+                this.clockEl.textContent = `${hours}:${minutes}:${seconds}`;
+            }
+
+            addTask() {
+                const title = document.getElementById('taskTitle').value.trim();
+                const duration = parseInt(document.getElementById('taskDuration').value);
+
+                if (!title || duration < 1) return;
+
+                const task = {
+                    id: Date.now().toString(),
+                    title: title,
+                    durationSec: duration * 60,
+                    remainingSec: duration * 60,
+                    status: 'pending'
+                };
+
+                this.tasks.push(task);
+                this.saveToStorage();
+                this.renderTasks();
+                this.taskForm.reset();
+            }
+
+            renderTasks() {
+                if (this.tasks.length === 0) {
+                    this.taskItemsEl.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📝</div>
+                            <p>Aucune tâche pour le moment</p>
+                        </div>
+                    `;
+                    this.startBtn.disabled = true;
+                    return;
+                }
+
+                this.startBtn.disabled = false;
+
+                this.taskItemsEl.innerHTML = this.tasks.map((task, index) => `
+                    <li class="task-item ${task.status === 'in-progress' ? 'in-progress' : ''}" 
+                        draggable="true" 
+                        data-id="${task.id}">
+                        <span class="drag-handle">☰</span>
+                        <div class="task-content">
+                            <div class="task-item-title">${this.escapeHtml(task.title)}</div>
+                            <div class="task-item-duration">${Math.ceil(task.remainingSec / 60)} min</div>
+                        </div>
+                        <button class="task-delete" data-id="${task.id}" aria-label="Supprimer">×</button>
+                    </li>
+                `).join('');
+
+                this.taskItemsEl.querySelectorAll('.task-delete').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.deleteTask(btn.dataset.id);
+                    });
+                });
+
+                this.setupDragAndDrop();
+            }
+
+            setupDragAndDrop() {
+                const items = this.taskItemsEl.querySelectorAll('.task-item');
+                
+                items.forEach(item => {
+                    item.addEventListener('dragstart', (e) => {
+                        if (this.timerInterval && item.classList.contains('in-progress')) {
+                            e.preventDefault();
+                            return;
+                        }
+                        this.draggedElement = item;
+                        item.classList.add('dragging');
+                    });
+
+                    item.addEventListener('dragend', () => {
+                        item.classList.remove('dragging');
+                        this.draggedElement = null;
+                    });
+
+                    item.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        const afterElement = this.getDragAfterElement(e.clientY);
+                        if (afterElement == null) {
+                            this.taskItemsEl.appendChild(this.draggedElement);
+                        } else {
+                            this.taskItemsEl.insertBefore(this.draggedElement, afterElement);
+                        }
+                    });
+
+                    item.addEventListener('drop', () => {
+                        this.reorderTasks();
+                    });
+                });
+            }
+
+            getDragAfterElement(y) {
+                const draggableElements = [...this.taskItemsEl.querySelectorAll('.task-item:not(.dragging)')];
+                
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+                    
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+            }
+
+            reorderTasks() {
+                const items = this.taskItemsEl.querySelectorAll('.task-item');
+                const newOrder = [];
+                
+                items.forEach(item => {
+                    const task = this.tasks.find(t => t.id === item.dataset.id);
+                    if (task) newOrder.push(task);
+                });
+                
+                this.tasks = newOrder;
+                this.saveToStorage();
+            }
+
+            deleteTask(id) {
+                const index = this.tasks.findIndex(t => t.id === id);
+                if (index === this.currentTaskIndex && this.timerInterval) {
+                    this.stop();
+                }
+                this.tasks = this.tasks.filter(t => t.id !== id);
+                if (this.currentTaskIndex > index) {
+                    this.currentTaskIndex--;
+                }
+                this.saveToStorage();
+                this.renderTasks();
+            }
+
+            start() {
+                if (this.isPaused) {
+                    this.isPaused = false;
+                    this.startTimer();
+                    return;
+                }
+
+                if (this.currentTaskIndex === -1) {
+                    this.currentTaskIndex = 0;
+                }
+
+                if (this.currentTaskIndex >= this.tasks.length) {
+                    this.showToast('Terminé', 'Toutes les tâches sont complétées !');
+                    this.reset();
+                    return;
+                }
+
+                const task = this.tasks[this.currentTaskIndex];
+                task.status = 'in-progress';
+                
+                this.startTimer();
+                this.renderTasks();
+            }
+
+            startTimer() {
+                const task = this.tasks[this.currentTaskIndex];
+                this.targetTimestamp = Date.now() + (task.remainingSec * 1000);
+                
+                this.startBtn.disabled = true;
+                this.pauseBtn.disabled = false;
+                this.stopBtn.disabled = false;
+
+                this.updateActiveTaskDisplay();
+                
+                this.timerInterval = setInterval(() => this.tick(), 1000);
+                this.tick();
+            }
+
+            tick() {
+                const task = this.tasks[this.currentTaskIndex];
+                const remaining = Math.max(0, Math.round((this.targetTimestamp - Date.now()) / 1000));
+                
+                task.remainingSec = remaining;
+                
+                this.updateTimerDisplay(remaining);
+                this.updateProgress();
+
+                if (remaining <= 0) {
+                    this.completeTask();
+                }
+            }
+
+            pause() {
+                this.isPaused = true;
+                clearInterval(this.timerInterval);
+                this.timerInterval = null;
+                
+                this.startBtn.disabled = false;
+                this.pauseBtn.disabled = true;
+            }
+
+            stop() {
+                clearInterval(this.timerInterval);
+                this.timerInterval = null;
+                this.isPaused = false;
+                
+                if (this.currentTaskIndex !== -1) {
+                    const task = this.tasks[this.currentTaskIndex];
+                    task.status = 'pending';
+                    task.remainingSec = task.durationSec;
+                }
+                
+                this.startBtn.disabled = false;
+                this.pauseBtn.disabled = true;
+                this.stopBtn.disabled = true;
+                
+                this.taskStatusEl.textContent = 'Aucune tâche';
+                this.activeTaskTitleEl.textContent = 'Prêt à commencer';
+                this.timerDisplayEl.textContent = '00:00';
+                this.progressFillEl.style.width = '0%';
+                
+                this.renderTasks();
+                this.saveToStorage();
+            }
+
+            completeTask() {
+                const task = this.tasks[this.currentTaskIndex];
+                task.status = 'completed';
+                
+                clearInterval(this.timerInterval);
+                this.timerInterval = null;
+                
+                this.playSound();
+                this.showNotification(task.title);
+                this.showToast('Tâche terminée', task.title);
+                
+                this.tasks.splice(this.currentTaskIndex, 1);
+                
+                if (this.tasks.length === 0) {
+                    this.reset();
+                    this.showToast('Bravo !', 'Toutes les tâches sont terminées !');
+                    return;
+                }
+                
+                if (this.settings.autoStartNext) {
+                    setTimeout(() => {
+                        this.currentTaskIndex = 0;
+                        this.start();
+                    }, 1000);
+                } else {
+                    this.currentTaskIndex = 0;
+                    this.stop();
+                }
+                
+                this.saveToStorage();
+                this.renderTasks();
+            }
+
+            reset() {
+                this.currentTaskIndex = -1;
+                this.stop();
+            }
+
+            updateActiveTaskDisplay() {
+                const task = this.tasks[this.currentTaskIndex];
+                this.taskStatusEl.textContent = 'En cours';
+                this.activeTaskTitleEl.textContent = task.title;
+            }
+
+            updateTimerDisplay(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                this.timerDisplayEl.textContent = 
+                    `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            }
+
+            updateProgress() {
+                const task = this.tasks[this.currentTaskIndex];
+                const progress = ((task.durationSec - task.remainingSec) / task.durationSec) * 100;
+                this.progressFillEl.style.width = `${progress}%`;
+            }
+
+            playSound() {
+                if (this.settings.soundEnabled) {
+                    this.audio.play().catch(e => console.log('Audio play failed:', e));
+                }
+            }
+
+            showNotification(taskTitle) {
+                if (this.settings.notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
+                    new Notification('Tâche terminée', {
+                        body: taskTitle,
+                        icon: '🎉'
+                    });
+                }
+            }
+
+            showToast(title, message) {
+                this.toastTitleEl.textContent = title;
+                this.toastMessageEl.textContent = message;
+                this.toastEl.classList.add('show');
+                
+                setTimeout(() => {
+                    this.toastEl.classList.remove('show');
+                }, 3000);
+            }
+
+            toggleSound() {
+                this.settings.soundEnabled = !this.settings.soundEnabled;
+                this.soundToggle.classList.toggle('active');
+                this.saveToStorage();
+            }
+
+            toggleAutoStart() {
+                this.settings.autoStartNext = !this.settings.autoStartNext;
+                this.autoStartToggle.classList.toggle('active');
+                this.saveToStorage();
+            }
+
+            async requestNotificationPermission() {
+                if (!('Notification' in window)) {
+                    this.showToast('Non supporté', 'Les notifications ne sont pas supportées par votre navigateur');
+                    return;
+                }
+
+                if (Notification.permission === 'granted') {
+                    this.settings.notificationsEnabled = !this.settings.notificationsEnabled;
+                    this.notifToggle.classList.toggle('active');
+                    this.saveToStorage();
+                    return;
+                }
+
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    this.settings.notificationsEnabled = true;
+                    this.notifToggle.classList.add('active');
+                    this.showToast('Activé', 'Les notifications sont maintenant activées');
+                    this.saveToStorage();
+                } else {
+                    this.showToast('Permission refusée', 'Activez les notifications dans les paramètres du navigateur');
+                }
+            }
+
+            saveToStorage() {
+                const data = {
+                    tasks: this.tasks,
+                    settings: this.settings
+                };
+                localStorage.setItem('sunset-timer.data', JSON.stringify(data));
+            }
+
+            loadFromStorage() {
+                const stored = localStorage.getItem('sunset-timer.data');
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    this.tasks = data.tasks || [];
+                    this.settings = { ...this.settings, ...data.settings };
+                    
+                    if (this.settings.soundEnabled) {
+                        this.soundToggle.classList.add('active');
+                    }
+                    if (this.settings.autoStartNext) {
+                        this.autoStartToggle.classList.add('active');
+                    }
+                    if (this.settings.notificationsEnabled) {
+                        this.notifToggle.classList.add('active');
+                    }
+                }
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            // Generate simple UUID
+            uuid() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                    const r = Math.random() * 16 | 0;
+                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+
+            // CSV Import Handler
+            handleCsvImport(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                // Reset input for re-selection
+                this.importCsvInput.value = '';
+
+                // Validate file type
+                const fileName = file.name.toLowerCase();
+                if (!fileName.endsWith('.csv')) {
+                    this.showToast('Erreur', 'Veuillez sélectionner un fichier CSV');
+                    return;
+                }
+
+                this.showImportingOverlay(true);
+
+                const reader = new FileReader();
+                
+                reader.onload = (e) => {
+                    try {
+                        let text = e.target.result;
+                        
+                        // Remove BOM if present
+                        if (text.charCodeAt(0) === 0xFEFF) {
+                            text = text.slice(1);
+                        }
+
+                        // Split lines and normalize line endings
+                        const lines = text
+                            .replace(/\r\n/g, '\n')
+                            .replace(/\r/g, '\n')
+                            .split('\n')
+                            .map(l => l.trim())
+                            .filter(l => l.length > 0);
+
+                        if (lines.length === 0) {
+                            this.showImportingOverlay(false);
+                            this.showToast('Erreur', 'Fichier CSV vide');
+                            return;
+                        }
+
+                        // Validate header
+                        const header = lines[0].trim();
+                        if (header !== 'name,time') {
+                            this.showImportingOverlay(false);
+                            this.showToast('Erreur', 'En-tête CSV invalide — attendu "name,time"');
+                            return;
+                        }
+
+                        // Parse tasks
+                        const newTasks = [];
+                        for (let i = 1; i < lines.length; i++) {
+                            const line = lines[i];
+                            if (!line) continue;
+
+                            // Simple split (doesn't handle quoted commas)
+                            const parts = line.split(',');
+                            if (parts.length < 2) continue;
+
+                            const rawName = parts[0];
+                            const rawTime = parts[1];
+
+                            if (!rawName) continue;
+
+                            const name = rawName.trim();
+                            const minutes = rawTime ? parseInt(rawTime.trim(), 10) : NaN;
+
+                            // Validate: name non-empty, time is integer >= 1
+                            if (!name || !Number.isInteger(minutes) || minutes < 1) {
+                                // Ignore silently
+                                continue;
+                            }
+
+                            const task = {
+                                id: this.uuid(),
+                                title: name,
+                                durationSec: minutes * 60,
+                                remainingSec: minutes * 60,
+                                status: 'pending',
+                                createdAt: Date.now()
+                            };
+
+                            newTasks.push(task);
+                        }
+
+                        // Add tasks to existing list
+                        this.tasks = this.tasks.concat(newTasks);
+                        this.saveToStorage();
+                        this.renderTasks();
+
+                        this.showImportingOverlay(false);
+                        
+                        if (newTasks.length === 0) {
+                            this.showToast('Import terminé', 'Aucune tâche valide trouvée');
+                        } else {
+                            const plural = newTasks.length > 1;
+                            this.showToast('✓ Import réussi', `${newTasks.length} tâche${plural ? 's' : ''} importée${plural ? 's' : ''}`);
+                        }
+
+                    } catch (err) {
+                        console.error('CSV parse error:', err);
+                        this.showImportingOverlay(false);
+                        this.showToast('Erreur', 'Erreur lors de la lecture du fichier CSV');
+                    }
+                };
+
+                reader.onerror = () => {
+                    this.showImportingOverlay(false);
+                    this.showToast('Erreur', 'Impossible de lire le fichier');
+                };
+
+                reader.readAsText(file, 'utf-8');
+            }
+
+            showImportingOverlay(show) {
+                if (show) {
+                    this.importingOverlay.classList.add('show');
+                } else {
+                    this.importingOverlay.classList.remove('show');
+                }
+            }
+        }
+
+        const app = new SunsetTimer();
+    </script>
+</body>
+</html>
