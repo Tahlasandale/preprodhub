@@ -454,12 +454,7 @@
             </div>
         </div>
 
-        <div class="logs-section">
-            <div class="logs-title">
-                📊 Journal d'activité
-            </div>
-            <div id="logs" class="logs" aria-live="polite" aria-atomic="true"></div>
-        </div>
+        
 
         <button class="refresh-btn" onclick="refreshCurrentLocation()" title="Actualiser la météo">
             🔄
@@ -515,57 +510,132 @@
         };
 
         function log(msg) {
-            const logs = document.getElementById("logs");
             const timestamp = new Date().toLocaleTimeString('fr-FR');
-            logs.innerText += `[${timestamp}] ${msg}\n`;
-            logs.scrollTop = logs.scrollHeight;
+            console.log(`[${timestamp}] ${msg}`);
+        }
+
+        // --- Config & helpers ---
+        const LAST_LOC_KEY = 'weather:last_location';
+        const LAST_LOC_TTL_MS = 7 * 24 * 3600 * 1000; // 7 jours
+        const IPAPI_URL = 'https://ipapi.co/json/';
+
+        function isSecureContextish() {
+            try {
+                const proto = location.protocol;
+                const host = location.hostname;
+                return (proto === 'https:') || host === 'localhost' || host === '127.0.0.1';
+            } catch { return false; }
+        }
+
+        function saveLastLocation(loc) {
+            try {
+                localStorage.setItem(LAST_LOC_KEY, JSON.stringify({ ...loc, ts: Date.now() }));
+                log('💾 Position mémorisée');
+            } catch {}
+        }
+
+        function loadLastLocation() {
+            try {
+                const raw = localStorage.getItem(LAST_LOC_KEY);
+                if (!raw) return null;
+                const obj = JSON.parse(raw);
+                if (!obj || typeof obj.lat !== 'number' || typeof obj.lon !== 'number') return null;
+                if ((Date.now() - (obj.ts || 0)) > LAST_LOC_TTL_MS) return null;
+                return obj;
+            } catch { return null; }
+        }
+
+        function clearStoredLocation() {
+            try { localStorage.removeItem(LAST_LOC_KEY); log('🗑️ Position mémorisée effacée'); } catch {}
+        }
+
+        function parseUrlOverride() {
+            try {
+                const p = new URLSearchParams(location.search);
+                const lat = parseFloat(p.get('lat'));
+                const lon = parseFloat(p.get('lon'));
+                const city = p.get('city') || 'Override URL';
+                if (!Number.isNaN(lat) && !Number.isNaN(lon)) {
+                    log('🔧 Override URL détecté — utilisation des coordonnées fournies');
+                    return { lat, lon, city };
+                }
+            } catch {}
+            return null;
+        }
+
+        async function getLocationByIP(timeoutMs = 5000) {
+            log('🌐 Tentative de localisation approximative via IP (ipapi.co)...');
+            const ctrl = new AbortController();
+            const t = setTimeout(() => ctrl.abort(), timeoutMs);
+            try {
+                const res = await fetch(IPAPI_URL, { signal: ctrl.signal });
+                clearTimeout(t);
+                if (!res.ok) throw new Error('ipapi.co HTTP ' + res.status);
+                const j = await res.json();
+                const lat = parseFloat(j.latitude);
+                const lon = parseFloat(j.longitude);
+                const city = j.city || 'Localisation IP (ipapi.co)';
+                if (Number.isFinite(lat) && Number.isFinite(lon)) {
+                    log('✅ Localisation IP obtenue via ipapi.co (précision limitée)');
+                    return { lat, lon, city };
+                }
+                throw new Error('Réponse ipapi.co sans coordonnées');
+            } catch (e) {
+                log('❌ Échec de la localisation IP ipapi.co: ' + (e.message || e));
+                return null;
+            }
         }
 
         async function getLocation() {
             log("📍 Récupération de votre position...");
-            return new Promise(resolve => {
-                let resolved = false;
-                const timer = setTimeout(() => {
-                    if (!resolved) {
-                        resolved = true;
-                        log("⏳ Timeout dépassé, utilisation de Paris par défaut");
-                        resolve({ lat: 48.8566, lon: 2.3522, city: "Paris" });
+            // Permissions API pre-check (best-effort)
+            if (navigator.permissions && navigator.permissions.query) {
+                try {
+                    const status = await navigator.permissions.query({ name: 'geolocation' });
+                    if (status.state === 'denied') {
+                        log("❌ Permission de localisation refusée par le navigateur");
+                        return null;
                     }
-                }, 5000);
+                } catch (e) { /* ignore */ }
+            }
 
-                if ("geolocation" in navigator) {
-                    navigator.geolocation.getCurrentPosition(
-                        async pos => {
-                            if (!resolved) {
-                                resolved = true;
-                                clearTimeout(timer);
-                                log("✅ Position géographique obtenue avec succès");
-                                
-                                resolve({ 
-                                    lat: pos.coords.latitude, 
-                                    lon: pos.coords.longitude, 
-                                    city: "Votre position" 
-                                });
-                            }
-                        },
-                        error => {
-                            if (!resolved) {
-                                resolved = true;
-                                clearTimeout(timer);
-                                log("⚠️ Accès à la géolocalisation refusé, utilisation de Paris");
-                                resolve({ lat: 48.8566, lon: 2.3522, city: "Paris" });
-                            }
-                        },
-                        {
-                            timeout: 4000,
-                            enableHighAccuracy: true
+            if (!("geolocation" in navigator)) {
+                log("⚠️ Géolocalisation non disponible sur cet appareil/navigateur");
+                return null;
+            }
+
+            return new Promise((resolve) => {
+                navigator.geolocation.getCurrentPosition(
+                    pos => {
+                        log("✅ Position géographique obtenue avec succès");
+                        resolve({
+                            lat: pos.coords.latitude,
+                            lon: pos.coords.longitude,
+                            city: "Votre position"
+                        });
+                    },
+                    error => {
+                        switch (error.code) {
+                            case error.PERMISSION_DENIED:
+                                log("⚠️ Accès à la géolocalisation refusé par l’utilisateur");
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                log("⚠️ Service de localisation réseau indisponible (poss. 403)");
+                                break;
+                            case error.TIMEOUT:
+                                log("⚠️ Temps dépassé pour la récupération de la position");
+                                break;
+                            default:
+                                log("⚠️ Erreur inconnue de géolocalisation");
                         }
-                    );
-                } else {
-                    resolved = true;
-                    log("⚠️ Géolocalisation non disponible, utilisation de Paris");
-                    resolve({ lat: 48.8566, lon: 2.3522, city: "Paris" });
-                }
+                        resolve(null);
+                    },
+                    {
+                        enableHighAccuracy: false,
+                        timeout: 15000,
+                        maximumAge: 600000 // 10 min
+                    }
+                );
             });
         }
 
@@ -573,7 +643,7 @@
             log("⛅ Récupération des données météorologiques...");
             try {
                 const res = await fetch(
-                    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,weathercode&forecast_days=1&timezone=auto`
+                    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,weathercode&forecast_days=2&timezone=auto`
                 );
                 if (!res.ok) throw new Error(`Erreur HTTP: ${res.status}`);
                 const data = await res.json();
@@ -631,14 +701,22 @@
                     <div class="forecast-hours">
             `;
 
-            for (let i = 0; i < Math.min(weather.hourly.time.length, 24); i += 3) {
-                const hour = new Date(weather.hourly.time[i]).toLocaleTimeString('fr-FR', {
+            // Afficher les 24 prochaines heures à partir de maintenant
+            const now = Date.now();
+            const times = weather.hourly.time;
+            let startIdx = times.findIndex(t => new Date(t).getTime() >= now);
+            if (startIdx === -1) startIdx = 0;
+            const maxCount = Math.min(24, times.length - startIdx);
+            for (let k = 0; k < maxCount; k++) {
+                const i = startIdx + k;
+                const hour = new Date(times[i]).toLocaleTimeString('fr-FR', {
                     hour: "2-digit",
                     minute: "2-digit"
                 });
                 const temp = Math.round(weather.hourly.temperature_2m[i]);
-                const desc = weatherCodes[weather.hourly.weathercode[i]] || "?";
-                const hourIcon = weatherIcons[weather.hourly.weathercode[i]] || "🌤️";
+                const code = weather.hourly.weathercode[i];
+                const desc = weatherCodes[code] || "?";
+                const hourIcon = weatherIcons[code] || "🌤️";
 
                 html += `
                     <div class="forecast-hour">
@@ -677,6 +755,7 @@
                 try {
                     const weatherData = await getWeather(lat, lon);
                     weatherElement.innerHTML = buildWeather(weatherData, { city: cityName, lat, lon });
+                    if (weatherData) saveLastLocation({ city: cityName, lat, lon });
                     log(`✅ Météo de ${cityName} chargée avec succès`);
                 } catch (error) {
                     log("💥 Erreur lors du changement de lieu : " + error.message);
@@ -690,6 +769,71 @@
             }
         }
 
+        function useManualLocation() {
+            const input = document.getElementById('manualLocation');
+            const val = (input.value || '').trim();
+            if (!val) { log('ℹ️ Entrez une ville ou des coordonnées lat,lon'); return; }
+            const coordMatch = val.match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
+            if (coordMatch) {
+                const lat = parseFloat(coordMatch[1]);
+                const lon = parseFloat(coordMatch[2]);
+                log(`🧭 Utilisation des coordonnées manuelles: ${lat},${lon}`);
+                (async () => {
+                    const weatherElement = document.getElementById("weather");
+                    weatherElement.innerHTML = `
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            <div class="loading-text">Chargement...</div>
+                        </div>
+                    `;
+                    const data = await getWeather(lat, lon);
+                    const loc = { city: 'Coordonnées manuelles', lat, lon };
+                    weatherElement.innerHTML = buildWeather(data, loc);
+                    if (data) saveLastLocation(loc);
+                })();
+                return;
+            }
+            // Essayer de mapper sur les lieux connus
+            const found = Object.entries(locations).find(([, name]) => name.toLowerCase() === val.toLowerCase());
+            if (found) {
+                const [coords, cityName] = found;
+                log(`📍 Lieu manuel reconnu: ${cityName}`);
+                document.getElementById('locationSelect').value = coords;
+                changeLocation();
+                return;
+            }
+            log('❓ Entrée non reconnue. Utilisez un format "lat,lon" (ex: 48.8566,2.3522) ou un lieu connu.');
+        }
+
+        async function useIPFallback() {
+            const weatherElement = document.getElementById("weather");
+            weatherElement.innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Localisation IP et chargement météo...</div>
+                </div>
+            `;
+            const loc = await getLocationByIP();
+            if (!loc) {
+                weatherElement.innerHTML = `
+                    <div class="error">
+                        ❌ Échec de la localisation IP.<br>
+                        <small>Essayez le champ manuel ou choisissez un lieu dans la liste.</small>
+                    </div>
+                `;
+                return;
+            }
+            const data = await getWeather(loc.lat, loc.lon);
+            weatherElement.innerHTML = buildWeather(data, loc);
+            if (data) saveLastLocation(loc);
+            const notice = document.createElement('div');
+            notice.className = 'location';
+            notice.textContent = 'ℹ️ Position approximative via IP — précision limitée.';
+            document.querySelector('.weather-card')?.appendChild(notice);
+        }
+
+        function retryWeather() { loadWeather(); }
+
         async function loadWeather() {
             const weatherElement = document.getElementById("weather");
             
@@ -702,9 +846,49 @@
 
             try {
                 log("🔄 Démarrage de l'actualisation météo");
-                const location = await getLocation();
+                // Secure-context messaging
+                if (!isSecureContextish()) {
+                    log('🔒 Contexte non sécurisé détecté — la géolocalisation nécessite HTTPS ou localhost');
+                }
+
+                // URL override has priority
+                let locationOverride = parseUrlOverride();
+                let location = locationOverride;
+
+                // Direct IP-based fallback (skip native geolocation for rapidité)
+                if (!location) {
+                    const ipLoc = await getLocationByIP();
+                    if (ipLoc) {
+                        log('ℹ️ Utilisation de la localisation approximative via IP');
+                        location = ipLoc;
+                    }
+                }
+
+                // Last-known if still no location
+                if (!location) {
+                    const last = loadLastLocation();
+                    if (last) {
+                        const d = new Date(last.ts);
+                        log(`📦 Utilisation de la dernière position connue (${d.toLocaleDateString('fr-FR')})`);
+                        location = last;
+                    }
+                }
+
+                // If still no location, neutral hint
+                if (!location) {
+                    weatherElement.innerHTML = `
+                        <div style="text-align:center; padding:16px;">
+                            <div style="margin-bottom:6px; font-weight:600;">Sélectionnez un lieu dans le menu déroulant ci-dessus.</div>
+                            <small>Astuce: vous pouvez choisir Paris, Versailles, etc.</small>
+                        </div>
+                    `;
+                    log("ℹ️ Aucune position fournie — inviter l'utilisateur à choisir un lieu dans la liste");
+                    return;
+                }
+
                 const weatherData = await getWeather(location.lat, location.lon);
                 weatherElement.innerHTML = buildWeather(weatherData, location);
+                if (weatherData) saveLastLocation(location);
                 log("🎉 Météo mise à jour avec succès !");
             } catch (error) {
                 log("💥 Erreur critique : " + error.message);
