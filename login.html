@@ -5,15 +5,167 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Connexion</title>
   <link rel="icon" href="favicon.png" type="image/png">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
-    body { font-family: Arial, sans-serif; background:#0a0a0a; color:#00ff41; padding:20px; }
-    .container { max-width:420px; margin:0 auto; background:#111; border:1px solid #00ff41; padding:24px; }
-    h1 { text-align:center; margin-bottom:16px; }
-    label { display:block; margin:12px 0 6px; }
-    input { width:100%; padding:10px; background:#1a1a1a; border:1px solid #333; color:#fff; }
-    button { width:100%; margin-top:16px; padding:10px; background:#00ff41; color:#000; border:none; cursor:pointer; font-weight:700; }
-    .msg { margin-top:12px; min-height:20px; }
-    a { color:#ffff00; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Orbitron', monospace;
+      background: #0a0a0a;
+      color: #00ff41;
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-image:
+        radial-gradient(circle at 25% 25%, #ff006620 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, #00ff4120 0%, transparent 50%),
+        linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Scanlines effect */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 255, 65, 0.03) 2px,
+        rgba(0, 255, 65, 0.03) 4px
+      );
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 32px 26px;
+      background: linear-gradient(135deg, #1a1a1a, #0f0f0f);
+      border: 2px solid #00ff41;
+      clip-path: polygon(20px 0%, 100% 0%, calc(100% - 20px) 100%, 0% 100%);
+      box-shadow:
+        0 10px 30px rgba(0, 255, 65, 0.2),
+        inset 0 0 20px rgba(0, 255, 65, 0.08);
+      position: relative;
+      overflow: hidden;
+      animation: slideInUp 0.6s ease-out;
+    }
+
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, #00ff4120, transparent);
+      transition: left 0.5s;
+    }
+
+    .container:hover::before { left: 100%; }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 18px;
+      font-size: 2rem;
+      font-weight: 900;
+      color: #00ff41;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      text-shadow:
+        0 0 10px #00ff41,
+        0 0 20px #00ff4180,
+        0 0 40px #00ff4160;
+    }
+
+    h1:hover { animation: glitch 0.3s; }
+
+    label {
+      display: block;
+      margin: 14px 0 8px;
+      font-weight: 700;
+      color: #ffff00;
+      letter-spacing: 1px;
+      text-shadow: 0 0 10px #ffff0080;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 12px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      color: #fff;
+      outline: none;
+      transition: all 0.3s ease;
+      clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
+    }
+
+    input:focus {
+      border-color: #00ff41;
+      box-shadow: 0 0 12px #00ff4140, inset 0 0 12px #00ff4115;
+      background: #151515;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 18px;
+      padding: 12px;
+      background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+      color: #ffff00;
+      border: 1px solid #ffff00;
+      cursor: pointer;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      transition: all 0.3s ease;
+      clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
+    }
+
+    button:hover {
+      background: linear-gradient(135deg, #ffff0020, #ffff0010);
+      box-shadow: 0 0 15px #ffff00, inset 0 0 15px #ffff0020;
+      transform: translateY(-2px);
+    }
+
+    .msg { margin-top: 12px; min-height: 20px; color: #ff0066; font-weight: 700; }
+
+    p { margin-top: 16px; text-align: center; }
+    a { color: #ffff00; text-decoration: none; font-weight: 700; }
+    a:hover { text-shadow: 0 0 10px #ffff0080; }
+
+    @media (max-width: 480px) {
+      body { padding: 16px; }
+      .container { padding: 26px 18px; }
+      h1 { font-size: 1.6rem; letter-spacing: 2px; }
+    }
+
+    @keyframes slideInUp {
+      from { opacity: 0; transform: translateY(40px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes glitch {
+      0% { transform: translate(0); }
+      20% { transform: translate(-2px, 2px); }
+      40% { transform: translate(-2px, -2px); }
+      60% { transform: translate(2px, 2px); }
+      80% { transform: translate(2px, -2px); }
+      100% { transform: translate(0); }
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabaseClient.js"></script>
