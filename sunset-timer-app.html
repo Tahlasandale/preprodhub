@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sunset Timer - Organiseur de tâches</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
             --sunset-light: #FFDAB9;
@@ -419,6 +420,158 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* --- Neon overrides to match index theme --- */
+        body {
+            font-family: 'Orbitron', monospace;
+            background: #0a0a0a;
+            color: #00ff41;
+            background-image:
+                radial-gradient(circle at 25% 25%, #ff006620 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, #00ff4120 0%, transparent 50%),
+                linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            position: relative;
+        }
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,65,0.03) 2px, rgba(0,255,65,0.03) 4px);
+            pointer-events: none;
+            z-index: 1000;
+        }
+        .clock {
+            font-weight: 900;
+            color: #00ff41;
+            text-shadow: 0 0 10px #00ff41, 0 0 20px rgba(0,255,65,.5), 0 0 40px rgba(0,255,65,.4);
+        }
+
+        .active-task-card, .task-form, .task-list, .settings-bar, .importing-card {
+            background: linear-gradient(135deg, #1a1a1a, #0f0f0f);
+            color: #00ff41;
+            border: 2px solid #00ff41;
+            box-shadow: 0 10px 30px rgba(0,255,65,.2), inset 0 0 20px rgba(0,255,65,.08);
+            border-radius: 0;
+            clip-path: polygon(20px 0%, 100% 0%, calc(100% - 20px) 100%, 0% 100%);
+        }
+
+        .task-status {
+            color: #ffff00;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .task-title {
+            color: #00ff41;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+        .timer-display {
+            color: #ff0066;
+            text-shadow: 0 0 15px #ff0066;
+        }
+
+        .progress-bar {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 0;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #ff0066, #ffff00, #00ff41);
+        }
+
+        label {
+            color: #ffff00;
+            text-shadow: 0 0 10px rgba(255,255,0,.5);
+        }
+        input {
+            background: #1a1a1a;
+            color: #fff;
+            border: 1px solid #333;
+            border-radius: 0;
+            clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
+        }
+        input:focus {
+            border-color: #00ff41;
+            box-shadow: 0 0 12px rgba(0,255,65,.25), inset 0 0 12px rgba(0,255,65,.1);
+            outline: none;
+        }
+
+        .btn {
+            border-radius: 0;
+            min-height: 44px;
+        }
+        .btn-primary, .btn-secondary {
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            color: #ffff00;
+            border: 1px solid #ffff00;
+            box-shadow: none;
+            clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
+            text-transform: uppercase;
+            font-weight: 900;
+            letter-spacing: 2px;
+        }
+        .btn-primary:hover:not(:disabled), .btn-secondary:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(255,255,0,.12), rgba(255,255,0,.06));
+            box-shadow: 0 0 15px #ffff00, inset 0 0 15px rgba(255,255,0,.2);
+            transform: translateY(-2px);
+            color: #ffff00;
+        }
+
+        .task-item {
+            background: linear-gradient(135deg, #2a2a2a, #1f1f1f);
+            border-left: 3px solid #ffff00;
+            border-radius: 0;
+            clip-path: polygon(15px 0%, 100% 0%, calc(100% - 15px) 100%, 0% 100%);
+        }
+        .task-item.in-progress {
+            border-left-color: #ff0066;
+        }
+        .drag-handle {
+            color: #ffff00;
+        }
+        .task-item-title {
+            color: #00ff41;
+        }
+        .task-item-duration {
+            color: #cccccc;
+        }
+        .task-delete {
+            color: #ff0066;
+        }
+        .task-delete:hover {
+            color: #ff3355;
+        }
+
+        .toggle-btn {
+            background: #1a1a1a;
+            color: #ffff00;
+            border: 1px solid #ffff00;
+            border-radius: 0;
+            clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
+        }
+        .toggle-btn.active {
+            background: rgba(255,255,0,.12);
+            color: #ffff00;
+        }
+
+        .toast {
+            background: linear-gradient(135deg, #1a1a1a, #0f0f0f);
+            color: #00ff41;
+            border: 2px solid #00ff41;
+            clip-path: polygon(20px 0%, 100% 0%, calc(100% - 20px) 100%, 0% 100%);
+        }
+        .toast-title {
+            color: #00ff41;
+        }
+        .toast-message {
+            color: #cccccc;
+        }
+        .importing-overlay {
+            background: rgba(0,0,0,0.5);
+        }
+        .empty-state {
+            color: #cccccc;
+        }
     </style>
 </head>
 <body>
@@ -499,7 +652,6 @@
         </div>
     </div>
 
-    <script src="js/utils.js"></script>
     <script>
         class SunsetTimer {
             constructor() {
@@ -580,8 +732,10 @@
 
             updateClock() {
                 const now = new Date();
-                const hhmmss = (window.Utils ? Utils.formatTimeHMS(now) : `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`);
-                this.clockEl.textContent = hhmmss;
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+                this.clockEl.textContent = `${hours}:${minutes}:${seconds}`;
             }
 
             addTask() {
@@ -860,7 +1014,7 @@
 
             playSound() {
                 if (this.settings.soundEnabled) {
-                    this.audio.play().catch(() => {});
+                    this.audio.play().catch(e => console.log('Audio play failed:', e));
                 }
             }
 
