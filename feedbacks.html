@@ -80,6 +80,7 @@
       margin-bottom: 1rem; border-left: 3px solid #ffff00; padding: 0.8rem; background: linear-gradient(135deg, #2a2a2a, #1f1f1f);
       clip-path: polygon(15px 0%, 100% 0%, calc(100% - 15px) 100%, 0% 100%);
       box-shadow: 0 0 20px rgba(255,255,0,0.12);
+      position: relative;
     }
     .entry img { max-width: 100%; height: auto; border-radius: 5px; border: 1px solid #00ff41; margin-top: 5px; box-shadow: 0 0 6px #00ff7a; display: block; }
 
@@ -94,6 +95,18 @@
     .seeall:hover { background: linear-gradient(135deg, #ffff0020, #ffff0010); box-shadow: 0 0 15px #ffff00, inset 0 0 15px #ffff0020; transform: translateY(-2px); }
 
     ::selection { background: #ff0066; color: #fff; }
+
+    /* Hover action buttons on entries */
+    .entry-actions { position: absolute; top: 6px; right: 6px; display: flex; gap: 6px; }
+    .entry-actions button {
+      width: auto; min-width: unset; padding: 6px 8px; font-size: 0.85rem; letter-spacing: 1px;
+      background: linear-gradient(135deg, #1a1a1a, #2a2a2a); border: 1px solid #ffff00; color: #ffff00;
+      clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+      opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-2px) scale(0.98);
+      transition: opacity .3s ease, transform .3s ease, visibility 0s linear .3s;
+    }
+    .entry:hover .entry-actions button { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0) scale(1); transition-delay: 0s; }
+    .entry-actions button:hover { box-shadow: 0 0 12px #ffff00, inset 0 0 10px #ffff0020; }
 
     /* Scrollbar styling */
     .feedbacks::-webkit-scrollbar { width: 8px; }
@@ -141,6 +154,8 @@
   <script src="js/supabaseClient.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/auth.js"></script>
+  <!-- JSZip for downloads -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <script>
     // Utilise le client Supabase existant (window.sb) et AuthHelpers
@@ -153,7 +168,7 @@
       if (!window.sb || !currentSession) return;
       let query = window.sb
         .from("Feedbaaack")
-        .select("content, created_at")
+        .select("id, content, created_at")
         .eq("user_id", currentSession.user.id)
         .order("created_at", { ascending: false });
       if (!showingAll) query = query.limit(limit);
@@ -184,17 +199,147 @@
       box.innerHTML = feedbacks
         .map(
           (fb) => `
-        <div class="entry">
+        <div class="entry" data-id="${fb.id}">
+          <div class="entry-actions">
+            <button type="button" class="edit" title="Modifier">✏️</button>
+            <button type="button" class="download" title="Télécharger">⬇️</button>
+            <button type="button" class="delete" title="Supprimer">🗑️</button>
+          </div>
           <div class="datetime">${new Date(fb.created_at).toLocaleString()}</div>
           ${
             (window.Utils ? Utils.isImageUrl(fb.content) : (typeof fb.content === 'string' && fb.content.match(/^https?:\/\/.+\.(jpg|jpeg|png|webp)$/i)))
               ? `<img src="${fb.content}" alt="Feedback manuscrit" loading="lazy">`
-              : `<div>${fb.content.replace(/\n/g, "<br>")}</div>`
+              : `<div class="text">${fb.content.replace(/\n/g, "<br>")}</div>`
           }
         </div>
       `
         )
         .join("");
+
+      // Bind action buttons
+      box.querySelectorAll('.entry .edit').forEach(btn => btn.addEventListener('click', (e) => {
+        const entry = e.currentTarget.closest('.entry');
+        const id = entry?.dataset?.id;
+        if (!id) return;
+        openEditInline(entry, id);
+      }));
+      box.querySelectorAll('.entry .download').forEach(btn => btn.addEventListener('click', async (e) => {
+        const entry = e.currentTarget.closest('.entry');
+        const id = entry?.dataset?.id;
+        if (!id) return;
+        const fb = feedbacks.find(f => String(f.id) === String(id));
+        if (!fb) return;
+        await downloadFeedback(fb);
+      }));
+      box.querySelectorAll('.entry .delete').forEach(btn => btn.addEventListener('click', async (e) => {
+        const entry = e.currentTarget.closest('.entry');
+        const id = entry?.dataset?.id;
+        if (!id) return;
+        await deleteFeedback(id);
+      }));
+    }
+
+    function isImage(urlOrText) {
+      return (window.Utils ? Utils.isImageUrl(urlOrText) : (typeof urlOrText === 'string' && /^https?:\/\/.+\.(jpg|jpeg|png|webp)$/i.test(urlOrText)));
+    }
+
+    function openEditInline(entryEl, id) {
+      const fb = feedbacks.find(f => String(f.id) === String(id));
+      if (!fb) return;
+      const currentIsImage = isImage(fb.content);
+      const currentText = currentIsImage ? '' : (fb.content || '');
+      const editor = document.createElement('div');
+      editor.innerHTML = `
+        <div class="editor" style="margin-top:8px; border-top:1px dashed #333; padding-top:8px;">
+          <label style="color:#ffff00;">Modifier le texte :</label>
+          <textarea rows="3" style="width:100%; background:#1a1a1a; color:#fff; border:1px solid #333; padding:10px; clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);">${currentText.replace(/</g,'&lt;')}</textarea>
+          <label style="color:#ffff00;">Ou remplacer par une image :</label>
+          <input type="file" accept="image/png, image/jpeg, image/webp" />
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <button type="button" class="save" style="width:auto; min-width:120px;">💾 Enregistrer</button>
+            <button type="button" class="cancel" style="width:auto;">Annuler</button>
+          </div>
+        </div>`;
+      const existingEditor = entryEl.querySelector('.editor');
+      if (existingEditor) existingEditor.remove();
+      entryEl.appendChild(editor.firstElementChild);
+
+      const textarea = entryEl.querySelector('.editor textarea');
+      const fileInput = entryEl.querySelector('.editor input[type="file"]');
+      const saveBtn = entryEl.querySelector('.editor .save');
+      const cancelBtn = entryEl.querySelector('.editor .cancel');
+
+      cancelBtn.onclick = () => { entryEl.querySelector('.editor')?.remove(); };
+
+      saveBtn.onclick = async () => {
+        try {
+          let newContent = textarea.value.trim();
+          const file = fileInput.files[0];
+          if (file) {
+            if (!window.Utils || typeof Utils.uploadToImgBB !== 'function') {
+              alert('Upload indisponible. Utils.uploadToImgBB manquant.');
+              return;
+            }
+            newContent = await Utils.uploadToImgBB(file, IMGBB_API_KEY);
+          }
+          if (!newContent) { alert('Le feedback ne peut pas être vide.'); return; }
+          const { error } = await window.sb
+            .from('Feedbaaack')
+            .update({ content: newContent })
+            .eq('user_id', currentSession.user.id)
+            .eq('id', id);
+          if (error) throw error;
+          await loadFeedbacks(showingAll ? 99 : 3);
+        } catch (err) {
+          console.error('[EDIT] Erreur update:', err);
+          alert('Erreur mise à jour: ' + (err?.message || err));
+        }
+      };
+    }
+
+    async function downloadFeedback(fb) {
+      try {
+        if (!isImage(fb.content)) {
+          const blob = new Blob([fb.content || ''], { type: 'text/plain;charset=utf-8' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = `feedback_${new Date(fb.created_at).toISOString().slice(0,19).replace(/[-:T]/g,'')}.txt`;
+          document.body.appendChild(a); a.click(); a.remove();
+          return;
+        }
+        if (!window.JSZip) { alert('JSZip non chargé.'); return; }
+        const zip = new JSZip();
+        const txt = `Image feedback URL:\n${fb.content}`;
+        zip.file('feedback.txt', txt);
+        const res = await fetch(fb.content, { mode: 'cors' });
+        const imgBlob = await res.blob();
+        const ext = (fb.content.match(/\.(jpg|jpeg|png|webp)(?:\?|#|$)/i) || [,'jpg'])[1].toLowerCase();
+        zip.file(`image.${ext}`, imgBlob);
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(zipBlob);
+        a.download = `feedback_${new Date(fb.created_at).toISOString().slice(0,19).replace(/[-:T]/g,'')}.zip`;
+        document.body.appendChild(a); a.click(); a.remove();
+      } catch (err) {
+        console.error('[DOWNLOAD] Erreur:', err);
+        alert('Erreur téléchargement: ' + (err?.message || err));
+      }
+    }
+
+    async function deleteFeedback(id) {
+      try {
+        if (!confirm('Supprimer ce feedback ?')) return;
+        const { error } = await window.sb
+          .from('Feedbaaack')
+          .delete()
+          .eq('user_id', currentSession.user.id)
+          .eq('id', id);
+        if (error) throw error;
+        await loadFeedbacks(showingAll ? 99 : 3);
+      } catch (err) {
+        console.error('[DELETE] Erreur:', err);
+        alert('Erreur suppression: ' + (err?.message || err));
+      }
     }
 
     document.addEventListener("DOMContentLoaded", async () => {

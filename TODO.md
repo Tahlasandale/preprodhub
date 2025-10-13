@@ -9,6 +9,7 @@ generated_at: 2025-10-09T12:00:00Z
 - [ ] Ajouter la capacité d’éditer les feedbacks
 - [ ] Ajouter de l’OCR dans le feedback
 - [ ] Mieux intégrer le TTS, l’OCR et l’écriture au module Feedback
+- [ ] Section "Objectifs Long Terme" a rendre personnalisable  
 
 
 - [ ] Créer la base de données pour Sunset Timer et ttes les autres en fait
@@ -18,6 +19,7 @@ generated_at: 2025-10-09T12:00:00Z
 - [ ] uniformiser la reaction au logout: modale de rappel et redirection vers la page de login
 
 ## long terme
+- [ ] MAJ readme
 - [ ] Modulariser le projet
 - [ ] Faire un bilan sécurité complet (frontend et backend)
 - [ ] Ajouter un cloud
