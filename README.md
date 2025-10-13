@@ -38,14 +38,21 @@ root/
 ├── favicon.png
 ├── README.md
 ├── LICENSE
-├── TODO.md
-├── GIT_REMOTE.md
+├── docs/
+│   ├── TODO.md
+│   ├── GIT_REMOTE.md
+│   ├── Juridique.md
+│   ├── copywriting.md
+│   └── server.md
 ├── git_auto_push.ps1
 ├── js/
 │   ├── supabaseClient.js
 │   ├── auth.js
 │   └── utils.js
 ```
+## 📚 Documentation
+
+Tous les fichiers Markdown (hors `README.md`) ont été regroupés dans le dossier `docs/`.
 
 ## 🚀 Installation
 
