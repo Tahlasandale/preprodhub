@@ -105,6 +105,7 @@
     let tasks = [];
     let completedCount = 0;
     let CURRENT_USER_ID = null;
+    let completedTasks = [];
 
     async function loadTasks() {
       if (!window.sb || !CURRENT_USER_ID) return;
@@ -113,19 +114,13 @@
           .from(TABLE)
           .select('id, title, completed, "order"')
           .eq('user_id', CURRENT_USER_ID)
-          .eq('completed', false)
           .order('order', { ascending: true });
 
         if (error) throw error;
-        tasks = (data || []).map(row => ({ id: row.id, title: row.title, order: row.order }));
-
-        const { count, error: countErr } = await window.sb
-          .from(TABLE)
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', CURRENT_USER_ID)
-          .eq('completed', true);
-        if (countErr) throw countErr;
-        completedCount = count || 0;
+        const all = data || [];
+        tasks = all.filter(t => !t.completed).map(row => ({ id: row.id, title: row.title, order: row.order }));
+        completedTasks = all.filter(t => t.completed).map(row => ({ id: row.id, title: row.title, order: row.order }));
+        completedCount = completedTasks.length;
         render();
       } catch (err) {
         console.error('[LOAD] Erreur:', err);
@@ -139,16 +134,15 @@
 
       if (!tasks.length) {
         list.innerHTML = '<li>Aucune tâche à faire 🎉</li>';
-        return;
-      }
-
-      list.innerHTML = tasks.map(
-        t => `
+      } else {
+        list.innerHTML = tasks.map(
+          t => `
           <li draggable="true" data-id="${t.id}">
             <input type="checkbox" data-id="${t.id}">
             <label>${t.title}</label>
           </li>`
-      ).join('');
+        ).join('');
+      }
 
       // Checkbox handler → mark completed
       document.querySelectorAll('#tasks input[type="checkbox"]').forEach(cb => {
@@ -170,6 +164,39 @@
 
       // Drag & Drop
       setupDragAndDrop();
+
+      // Completed list render (no drag & drop)
+      const completedList = document.getElementById('completed-tasks');
+      if (completedList) {
+        if (!completedTasks.length) {
+          completedList.innerHTML = '<li>Aucune tâche terminée 🎉</li>';
+        } else {
+          completedList.innerHTML = completedTasks.map(t => `
+            <li data-id="${t.id}">
+              <input type="checkbox" data-id="${t.id}" checked>
+              <label>${t.title}</label>
+            </li>
+          `).join('');
+
+          // Checkbox handler → un-complete
+          completedList.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.onchange = async (e) => {
+              const id = e.target.dataset.id;
+              try {
+                const { error } = await window.sb
+                  .from(TABLE)
+                  .update({ completed: false })
+                  .eq('id', id)
+                  .eq('user_id', CURRENT_USER_ID);
+                if (error) throw error;
+                loadTasks();
+              } catch (err) {
+                console.error('[UNCOMPLETE] Erreur:', err);
+              }
+            };
+          });
+        }
+      }
     }
 
     async function addTask(title) {
@@ -241,6 +268,23 @@
         if (title) addTask(title);
         e.target.reset();
       };
+      // Toggle completed section visibility
+      const toggleBtn = document.getElementById('toggle-completed');
+      const completedSection = document.getElementById('completed-section');
+      if (toggleBtn && completedSection) {
+        // Match spacing with list gap
+        const tasksList = document.getElementById('tasks');
+        if (tasksList) {
+          const styles = window.getComputedStyle(tasksList);
+          const gap = styles.getPropertyValue('gap') || styles.getPropertyValue('row-gap') || '14px';
+          toggleBtn.style.marginTop = gap.trim();
+        }
+        toggleBtn.addEventListener('click', () => {
+          const isHidden = completedSection.style.display === 'none';
+          completedSection.style.display = isHidden ? 'block' : 'none';
+          toggleBtn.textContent = isHidden ? 'Cacher tâches terminées' : 'Afficher tâches terminées';
+        });
+      }
       loadTasks();
     });
   </script>
@@ -253,5 +297,10 @@
     <button type="submit">Ajouter</button>
   </form>
   <ul id="tasks"></ul>
+  <button id="toggle-completed" type="button">Afficher tâches terminées</button>
+  <div id="completed-section" style="display:none">
+    <h2>Tâches terminées</h2>
+    <ul id="completed-tasks"></ul>
+  </div>
 </body>
 </html>

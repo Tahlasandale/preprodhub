@@ -19,11 +19,11 @@ $UserEmail = "mixjojo2006@gmail.com"
 git config user.name "$UserName"
 git config user.email "$UserEmail"
 
-# Vérification du remote
-Write-Host "🔍 Vérification du remote..."
+# Verification du remote
+Write-Host "🔍 Verification du remote..."
 $remote = git remote -v | Select-String $RemoteUrl
 if (-not $remote) {
-    Write-Host "🔄 Remote incorrect, mise à jour..."
+    Write-Host "🔄 Remote incorrect, mise a jour..."
     git remote set-url origin $RemoteUrl
 }
 
@@ -42,4 +42,4 @@ git commit -m "$Message"
 Write-Host "🚀 Push vers $Branch..."
 git push -u origin $Branch
 
-Write-Host "✅ Commit et push terminés avec succès !"
+Write-Host "✅ Commit et push termines avec succes !"
