@@ -4,13 +4,12 @@ generated_at: 2025-10-09T12:00:00Z
 ---
 
 ## court terme
+- [ ] csss de simpletabhtml et de bouton ajouter fichiers dans feedback
 - [ ] centraliser le css en 1 seul fichier
 - [ ] police de la navbar
-- [ ] Ajouter la capacité d’éditer les feedbacks
 - [ ] Ajouter de l’OCR dans le feedback
 - [ ] Mieux intégrer le TTS, l’OCR et l’écriture au module Feedback
 - [ ] Section "Objectifs Long Terme" a rendre personnalisable  
-
 
 - [ ] Créer la base de données pour Sunset Timer et ttes les autres en fait
 - [ ] Ajouter les fonctionnalités de page, de tourner les pages, de PDF et d'auto-save toutes les 5 minutes au simple Tab HTML
