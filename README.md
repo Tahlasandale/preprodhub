@@ -1,4 +1,3 @@
-```markdown
 # CYBER PRODUCTIVITY HUB
 > Tableau de bord centralisé au style cyberpunk pour accéder à diverses applications de productivité.
 
@@ -20,25 +19,32 @@ Il propose une navigation rapide entre différentes pages (Todo, Feedbacks, RSS,
 
 ## 🏗️ Structure du projet
 ```
-
 root/
 ├── index.html
-├── js/
-│   ├── supabaseClient.js
-│   ├── utils.js
-│   └── auth.js
-├── favicon.png
-├── todo app.html
-├── feedbacks.html
-├── rss.html
+├── account.html
+├── login.html
+├── register.html
+├── dalyview.html
 ├── meteo.html
+├── pomodoro.html
+├── rss.html
+├── feedbacks.html
+├── todo app.html
 ├── toolbox.html
 ├── SimpleTabHTML.html
-├── dalyview.html
 ├── sunset-timer-app.html
-└── [autres fichiers...]
-
-````
+├── test.html
+├── favicon.png
+├── README.md
+├── LICENSE
+├── TODO.md
+├── GIT_REMOTE.md
+├── git_auto_push.ps1
+├── js/
+│   ├── supabaseClient.js
+│   ├── auth.js
+│   └── utils.js
+```
 
 ## 🚀 Installation
 
@@ -46,7 +52,7 @@ root/
 git clone <repo-url>
 cd cyber-productivity-hub
 # Ouvrir le fichier index.html dans un navigateur
-````
+```
 
 Aucune installation de dépendances locale n’est nécessaire — tout fonctionne côté client via le navigateur.
 
@@ -115,7 +121,7 @@ Autres fichiers utiles:
 
 Les contributions sont les bienvenues :
 
-```bash
+```
 # Forker le dépôt
 # Créer une branche de fonctionnalité
 git checkout -b feature/nouvelle-fonctionnalite
@@ -132,6 +138,3 @@ git push origin feature/nouvelle-fonctionnalite
 ## 🪪 Licence
 
 Ce projet est distribué sous **The Unlicense** (domaine public). Voir `LICENSE`.
-
-```
-```
