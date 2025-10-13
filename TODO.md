@@ -4,7 +4,7 @@ generated_at: 2025-10-09T12:00:00Z
 ---
 
 ## court terme
-
+- [ ] centraliser le css en 1 seul fichier
 - [ ] police de la navbar
 - [ ] Ajouter la capacité d’éditer les feedbacks
 - [ ] Ajouter de l’OCR dans le feedback
@@ -27,4 +27,8 @@ generated_at: 2025-10-09T12:00:00Z
 - [ ] Trouver un nom de produit
 - [ ] Mettre à jour les mentions légales et la licence
 - [ ] Faire en sorte que tout puisse fonctionner en application locale avec des fichiers CSV à la place des bases de données
+- [ ] passer a base de donnee geree par moi meme (virer supabase, faire un serveur , base de donnee locale (sqlite))
+- [ ] passer a stockage photos indepensant sans imgbb
+
+
 
