@@ -4,9 +4,6 @@ generated_at: 2025-10-09T12:00:00Z
 ---
 
 ## court terme
-- [ ] modifier un feedback ca doit se faire via une modale
-- [ ]css de bouton ajouter fichiers dans feedback
-- [ ] pk les feedbacks sont dans une boite et p s direct sur la page
 - [ ] police de la navbar
 - [ ] Simple Tab HTML toolbar  toujours affichee,pas que ne cas de zoom, et eclaircir ses couleurs, et virer le bouton pour masquer la toolbar
 - [ ] Ajouter de l’OCR dans le feedback

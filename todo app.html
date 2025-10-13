@@ -137,6 +137,15 @@
       color: #00ff41;
       font-family: 'Orbitron', monospace;
     }
+
+    /* Modal editor */
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(4px); }
+    .modal.hidden { display: none; }
+    .modal::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,65,0.05) 2px, rgba(0,255,65,0.05) 4px); pointer-events: none; }
+    .modal-content { background: linear-gradient(135deg, #1a1a1a, #0f0f0f); border: 2px solid #00ff41; padding: 1.5rem; width: 90%; max-width: 520px; clip-path: polygon(20px 0%, 100% 0%, calc(100% - 20px) 100%, 0% 100%); box-shadow: 0 0 25px rgba(0,255,65,0.4), inset 0 0 10px rgba(0,255,65,0.1); position: relative; }
+    .modal-content h2 { color: #ffff00; text-align: center; margin-bottom: 1rem; }
+    .modal-content input[type="text"] { width: 100%; background: #1a1a1a; color: #fff; border: 1px solid #333; padding: 12px; margin-top: 8px; outline: none; clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%); }
+    .modal-buttons { display: flex; justify-content: space-between; gap: 10px; margin-top: 1rem; }
   </style>
   <!-- Use shared Supabase and auth helpers (consistent with the project) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -199,27 +208,15 @@
         console.error('[LOAD] Erreur:', err?.message || err);
       }
 
-      // Edit button handler (active tasks only)
+      // Edit button handler (active tasks only) → open modal
       document.querySelectorAll('#tasks .edit-btn').forEach(btn => {
-        btn.onclick = async (e) => {
+        btn.onclick = (e) => {
           const li = e.currentTarget.closest('li');
           const id = li?.dataset?.id;
           const label = li?.querySelector('label');
           const oldTitle = label ? label.textContent : '';
-          const newTitle = window.prompt('Modifier la tâche :', oldTitle);
-          const trimmed = (newTitle || '').trim();
-          if (!id || !trimmed || trimmed === oldTitle) return;
-          try {
-            const { error } = await window.sb
-              .from(TABLE)
-              .update({ title: trimmed })
-              .eq('id', id)
-              .eq('user_id', CURRENT_USER_ID);
-            if (error) throw error;
-            loadTasks();
-          } catch (err) {
-            console.error('[EDIT] Erreur:', err?.message || err);
-          }
+          if (!id) return;
+          openEditModal(id, oldTitle);
         };
       });
     }
@@ -343,6 +340,42 @@
       }
     }
 
+    // Open modal to edit a task title
+    function openEditModal(id, oldTitle) {
+      const modal = document.getElementById('taskEditModal');
+      const input = document.getElementById('taskEditInput');
+      const saveBtn = document.getElementById('taskEditSave');
+      const cancelBtn = document.getElementById('taskEditCancel');
+      if (!modal || !input || !saveBtn || !cancelBtn) return;
+
+      input.value = oldTitle || '';
+      modal.classList.remove('hidden');
+
+      const cleanup = () => {
+        saveBtn.onclick = null;
+        cancelBtn.onclick = null;
+        modal.classList.add('hidden');
+      };
+
+      cancelBtn.onclick = cleanup;
+      saveBtn.onclick = async () => {
+        const trimmed = (input.value || '').trim();
+        if (!trimmed || trimmed === oldTitle) { cleanup(); return; }
+        try {
+          const { error } = await window.sb
+            .from(TABLE)
+            .update({ title: trimmed })
+            .eq('id', id)
+            .eq('user_id', CURRENT_USER_ID);
+          if (error) throw error;
+          await loadTasks();
+        } catch (err) {
+          console.error('[EDIT] Erreur:', err?.message || err);
+        }
+        cleanup();
+      };
+    }
+
     function setupDragAndDrop() {
       const list = document.getElementById('tasks');
       let dragging;
@@ -437,6 +470,18 @@
   <div id="completed-section" style="display:none">
     <h2>Tâches terminées</h2>
     <ul id="completed-tasks"></ul>
+  </div>
+  
+  <!-- Edit Task Modal -->
+  <div id="taskEditModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="taskEditTitle">
+    <div class="modal-content">
+      <h2 id="taskEditTitle">Modifier la tâche</h2>
+      <input type="text" id="taskEditInput" placeholder="Nouveau titre" />
+      <div class="modal-buttons">
+        <button id="taskEditSave"> Enregistrer</button>
+        <button id="taskEditCancel">Annuler</button>
+      </div>
+    </div>
   </div>
 </body>
 </html>
