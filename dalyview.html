@@ -4,91 +4,118 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vue du Jour</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
-    * {margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;}
+    * {margin: 0; padding: 0; box-sizing: border-box;}
 
     body {
-        background: #1e1e2f;
-        color: #e0e0e0;
+        font-family: 'Orbitron', monospace;
+        background: #0a0a0a;
+        color: #00ff41;
         display: flex;
         flex-direction: column;
         min-height: 100vh;
         padding: 20px;
+        background-image:
+            radial-gradient(circle at 25% 25%, #ff006620 0%, transparent 50%),
+            radial-gradient(circle at 75% 75%, #00ff4120 0%, transparent 50%),
+            linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+        overflow-x: hidden;
+        position: relative;
     }
 
-    h1 {text-align: center; margin-bottom: 5px; color: #c0c0ff;}
+    /* Scanlines */
+    body::after {
+        content: '';
+        position: fixed; inset: 0;
+        background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,65,0.03) 2px, rgba(0,255,65,0.03) 4px);
+        pointer-events: none; z-index: 1000;
+    }
+
+    h1 {
+        text-align: center; margin-bottom: 10px; color: #00ff41;
+        font-weight: 900; letter-spacing: 3px; text-transform: uppercase;
+        text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff4180, 0 0 40px #00ff4160;
+    }
 
     .current-time { 
-        text-align: center; 
-        font-family: 'Press Start 2P', monospace; 
-        font-size: 3rem; 
-        color: #b0b0ff; 
-        margin-bottom: 20px; 
+        text-align: center;
+        font-size: 3rem;
+        color: #ff0066;
+        margin-bottom: 18px;
+        font-weight: 900;
+        letter-spacing: 4px;
+        text-shadow: 0 0 15px #ff0066, 0 0 30px rgba(255,0,102,.5);
     }
-
-    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
     .progress-container {
         width: 100%;
-        height: 25px;
-        background: #2c2c3c;
-        border-radius: 15px;
-        overflow: hidden;
-        margin-bottom: 30px;
+        height: 26px;
+        background: linear-gradient(135deg, #1a1a1a, #0f0f0f);
+        border: 2px solid #00ff41;
+        clip-path: polygon(20px 0%, 100% 0%, calc(100% - 20px) 100%, 0% 100%);
+        margin-bottom: 24px;
+        box-shadow: 0 10px 30px rgba(0,255,65,.2), inset 0 0 20px rgba(0,255,65,.08);
     }
 
     .progress-bar {
         height: 100%;
         width: 0;
-        background: linear-gradient(90deg, #a1c4fd, #c2e9fb);
-        border-radius: 15px;
+        background: linear-gradient(90deg, #ff0066, #ffff00, #00ff41);
         transition: width 0.5s ease;
+        box-shadow: inset 0 0 12px rgba(0,0,0,.25);
     }
 
     .current-activity {
-        background: #2c2c3c;
-        border-radius: 15px;
+        background: linear-gradient(135deg, #1a1a1a, #0f0f0f);
+        border: 2px solid #00ff41;
+        clip-path: polygon(20px 0%, 100% 0%, calc(100% - 20px) 100%, 0% 100%);
         padding: 20px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0,255,65,.2), inset 0 0 20px rgba(0,255,65,.08);
+        margin-bottom: 24px;
         text-align: center;
         transition: background 0.3s ease;
     }
 
-    .current-activity h2 { margin-bottom: 10px; color: #b0b0ff; font-weight: normal; }
-    .current-activity p { font-size: 18px; color: #d0d0ff; font-weight: bold; }
+    .current-activity h2 { margin-bottom: 10px; color: #00ff41; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 0 10px #00ff4180; }
+    .current-activity p { font-size: 18px; color: #ffff00; font-weight: 700; text-shadow: 0 0 10px rgba(255,255,0,.5); }
 
-    .timeline { display: flex; flex-direction: column; gap: 15px; margin-bottom: 30px; display: none; }
+    .timeline { display: none; flex-direction: column; gap: 12px; margin-bottom: 24px; }
 
     .timeline-item, .widget-container, .planning-button, .toggle-button {
-        background: #2c2c3c;
-        border-radius: 15px;
-        padding: 15px 20px;
-        box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+        background: linear-gradient(135deg, #2a2a2a, #1f1f1f);
+        border-left: 3px solid #ffff00;
+        padding: 14px 18px;
         display: flex;
         justify-content: center;
         align-items: center;
         text-align: center;
-        transition: transform 0.3s ease, background 0.3s ease;
-        margin-bottom: 15px;
+        transition: transform 0.3s ease, background 0.3s ease, border-color .2s ease;
+        margin-bottom: 12px;
+        clip-path: polygon(15px 0%, 100% 0%, calc(100% - 15px) 100%, 0% 100%);
     }
 
-    .timeline-item:hover, .planning-button:hover, .toggle-button:hover { background: #3a3a5a; transform: translateY(-3px); }
+    .timeline-item:hover, .planning-button:hover, .toggle-button:hover { background: linear-gradient(135deg, #2e2e2e, #242424); transform: translateY(-3px); box-shadow: 0 0 20px rgba(255,255,0,.12); border-left-color: #ff0066; }
 
     .planning-button { 
         display: block;
-        color: #fff;
-        font-weight: bold;
+        color: #ffff00;
+        font-weight: 900;
         text-decoration: none;
-        margin: 0 auto 30px auto;
+        margin: 0 auto 24px auto;
+        background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+        border: 1px solid #ffff00;
+        clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
     }
 
-    .widget-container iframe { width: 100%; height: 240px; border-radius: 15px; }
+    .widget-container iframe { width: 100%; height: 240px; border: 2px solid #00ff41; clip-path: polygon(20px 0%, 100% 0%, calc(100% - 20px) 100%, 0% 100%); }
 
-    .toggle-button { cursor: pointer; color: #fff; font-weight: bold; }
+    .toggle-button { cursor: pointer; color: #ffff00; font-weight: 900; letter-spacing: 1px; }
 
     @media(max-width: 768px){
         .timeline-item { flex-direction: column; align-items: flex-start; }
+        .current-time { font-size: 2.2rem; letter-spacing: 3px; }
+        h1 { letter-spacing: 2px; }
     }
 </style>
 </head>

@@ -6,7 +6,7 @@ generated_at: 2025-10-09T12:00:00Z
 ## 🔥 Priority: High
 
 - [ ] Optimiser le workflow IA
-- [ ] Unifier le CSS
+- [ ] Pk les modules suvrent ds une autre fenetre?
 - [ ] Modulariser le projet
 - [ ] Ajouter tags à la TODO et trier par tags
 - [ ] Pouvoir afficher les tâches terminées
