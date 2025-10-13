@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>To-Do List Minimaliste - Persistance ordre</title>
+  <title>Tâches</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
@@ -227,7 +227,7 @@
     function render() {
       const list = document.getElementById('tasks');
       const counter = document.getElementById('counter');
-      counter.textContent = `Tâches terminées : ${completedCount}`;
+      counter.textContent = `Tâches terminées\u00A0: ${completedCount}`;
 
       // Filter by selected tag (active tasks only)
       const filterEl = document.getElementById('filter-tags');
@@ -258,7 +258,7 @@
             <input type="checkbox" data-id="${t.id}">
             <label>${t.title}</label>
             <span class="tags">${Array.isArray(t.tags) && t.tags.length ? t.tags.join(', ') : ''}</span>
-            <button class="edit-btn" type="button" aria-label="Editer la tâche">✏️</button>
+            <button class="edit-btn" type="button" aria-label="Éditer la tâche">✏️</button>
           </li>`
         ).join('');
       }
@@ -422,10 +422,10 @@
   </script>
 </head>
 <body>
-  <h1>📝 To-Do List Minimaliste</h1>
-  <div id="counter" class="counter">Tâches terminées : 0</div>
+  <h1>Tâches</h1>
+  <div id="counter" class="counter">Tâches terminées&nbsp;: 0</div>
   <form id="form" autocomplete="off">
-    <input type="text" id="content" placeholder="Nouvelle tâche..." />
+    <input type="text" id="content" placeholder="Nouvelle tâche" />
     <input type="text" id="tags" placeholder="Tags (séparés par des virgules)" />
     <button type="submit">Ajouter</button>
   </form>
@@ -433,7 +433,7 @@
     <option value="">Toutes les tâches</option>
   </select>
   <ul id="tasks"></ul>
-  <button id="toggle-completed" type="button">Afficher tâches terminées</button>
+  <button id="toggle-completed" type="button">Afficher les tâches terminées</button>
   <div id="completed-section" style="display:none">
     <h2>Tâches terminées</h2>
     <ul id="completed-tasks"></ul>

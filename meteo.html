@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Météo Pastel</title>
+    <title>Météo</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -241,8 +241,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1 class="title">☀️ Météo Douce</h1>
-            <p class="subtitle">Prévisions météorologiques en temps réel</p>
+            <h1 class="title">Météo</h1>
+            <p class="subtitle">Prévisions météo</p>
             
             <div class="location-selector">
                 <select id="locationSelect" class="location-select" onchange="changeLocation()">
@@ -468,7 +468,7 @@
 
         function buildWeather(weather, location) {
             if (!weather || !weather.current_weather) {
-                return '<div class="error">❌ Données météorologiques indisponibles</div>';
+                return '<div class="error">❌ Données météo indisponibles</div>';
             }
 
             const cur = weather.current_weather;

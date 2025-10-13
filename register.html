@@ -86,7 +86,7 @@
     <h1>Créer un compte</h1>
     <form id="register-form">
       <label for="email">Email</label>
-      <input id="email" type="email" required placeholder="you@example.com" />
+      <input id="email" type="email" required placeholder="vous@exemple.com" />
 
       <label for="password">Mot de passe</label>
       <input id="password" type="password" required minlength="8" placeholder="Au moins 8 caractères" />
@@ -111,11 +111,11 @@
 
         // Simple client validation
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-          msg.textContent = 'Email invalide';
+          msg.textContent = 'Email invalide.';
           return;
         }
         if (password.length < 8) {
-          msg.textContent = 'Mot de passe trop court (min 8)';
+          msg.textContent = 'Mot de passe trop court (min. 8).';
           return;
         }
 
@@ -128,7 +128,7 @@
           msg.textContent = 'Inscription réussie. Redirection...';
           setTimeout(() => { window.location.href = 'login.html'; }, 1200);
         } catch (err) {
-          msg.textContent = err.message || 'Erreur lors de l\'inscription';
+          msg.textContent = err.message || 'Erreur lors de l\'inscription.';
         }
       });
     })();

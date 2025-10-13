@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pomodoro Timer - Digital Clock Style</title>
+    <title>Pomodoro</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 
@@ -328,11 +328,11 @@
 </head>
 <body>
     <div class="container">
-        <h1 class="title">🍅 Pomodoro</h1>
+        <h1 class="title">Pomodoro</h1>
         
         <div class="timer-display">
             <div class="time" id="timeDisplay">25:00</div>
-            <div class="session-type" id="sessionType">Session de travail</div>
+            <div class="session-type" id="sessionType">Travail</div>
         </div>
 
         <div class="progress-bar">
@@ -342,7 +342,7 @@
         <div class="controls">
             <button class="btn start" id="startBtn">▶ Démarrer</button>
             <button class="btn pause" id="pauseBtn">⏸ Pause</button>
-            <button class="btn reset" id="resetBtn">⏹ Reset</button>
+            <button class="btn reset" id="resetBtn">⏹ Réinitialiser</button>
         </div>
 
         <div class="preset-controls">
@@ -353,7 +353,7 @@
         </div>
 
         <div class="custom-input" id="customInput" style="display: none;">
-            <label>Minutes:</label>
+            <label>Minutes&nbsp;:</label>
             <input type="number" id="customMinutes" min="1" max="60" value="25">
             <button class="btn" id="setCustomBtn">Valider</button>
         </div>
@@ -541,14 +541,14 @@
                     this.completedSessions++;
                     this.totalMinutes += Math.floor(this.totalTime / 60);
                     this.currentStreak++;
-                    this.showNotification('Session terminée ! Temps de pause 🎉');
+                    this.showNotification('Session terminée ! Pause 🎉');
                     
                     // Passer à la pause
                     this.isWorkSession = false;
                     this.currentTime = this.breakTime;
                     this.totalTime = this.breakTime;
                 } else {
-                    this.showNotification('Pause terminée ! Reprenez le travail 💪');
+                    this.showNotification('Pause terminée ! Reprise du travail 💪');
                     
                     // Retour au travail
                     this.isWorkSession = true;
@@ -569,7 +569,7 @@
                 const seconds = this.currentTime % 60;
                 this.timeDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                 
-                this.sessionType.textContent = this.isWorkSession ? 'Session de travail' : 'Pause';
+                this.sessionType.textContent = this.isWorkSession ? 'Travail' : 'Pause';
                 
                 // Changer la couleur selon le type de session
                 const color = this.isWorkSession ? '#00ff88' : '#ff8800';

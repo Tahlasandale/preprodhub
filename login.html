@@ -176,7 +176,7 @@
     <h1>Se connecter</h1>
     <form id="login-form">
       <label for="email">Email</label>
-      <input id="email" type="email" required placeholder="you@example.com" />
+      <input id="email" type="email" required placeholder="vous@exemple.com" />
 
       <label for="password">Mot de passe</label>
       <input id="password" type="password" required placeholder="Votre mot de passe" />
@@ -200,14 +200,14 @@
         const password = document.getElementById('password').value;
 
         if (!email || !password) {
-          msg.textContent = 'Veuillez remplir tous les champs';
+          msg.textContent = 'Veuillez remplir tous les champs.';
           return;
         }
 
         try {
           const { data, error } = await AuthHelpers.signInWithEmailPassword(email, password);
           if (error) {
-            msg.textContent = 'Email ou mot de passe incorrect';
+            msg.textContent = 'Email ou mot de passe incorrect.';
             return;
           }
 
@@ -217,7 +217,7 @@
           msg.textContent = 'Connexion réussie. Redirection...';
           setTimeout(() => { window.location.href = redirect; }, 800);
         } catch (err) {
-          msg.textContent = err.message || 'Erreur lors de la connexion';
+          msg.textContent = err.message || 'Erreur lors de la connexion.';
         }
       });
     })();

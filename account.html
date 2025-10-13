@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mon Compte</title>
+  <title>Mon compte</title>
   <link rel="icon" href="favicon.png" type="image/png">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
@@ -88,7 +88,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>Mon Compte</h1>
+    <h1>Mon compte</h1>
 
     <div class="info">
       <div><strong>Email:</strong> <span id="user-email">...</span></div>
@@ -108,7 +108,7 @@
       <div class="msg" id="msg"></div>
     </div>
 
-    <p><a href="index.html">⟵ Retour à l'accueil</a></p>
+    <p><a href="index.html">⟵ Retour à l’accueil</a></p>
   </div>
 
   <script>
@@ -127,7 +127,7 @@
       document.getElementById('btn-save-pass').addEventListener('click', async () => {
         msg.textContent = '';
         const newPwd = document.getElementById('new-password').value;
-        if (!newPwd || newPwd.length < 8) { msg.textContent = 'Mot de passe trop court (min 8)'; return; }
+        if (!newPwd || newPwd.length < 8) { msg.textContent = 'Mot de passe trop court (min. 8).'; return; }
         try {
           const { error } = await AuthHelpers.updatePassword(newPwd);
           if (error) { msg.textContent = error.message; return; }
