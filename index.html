@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <title>CYBER PRODUCTIVITY HUB</title>
     <link rel="icon" href="favicon.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
@@ -70,26 +70,71 @@
             clip-path: polygon(20px 0%, 100% 0%, calc(100% - 20px) 100%, 0% 100%);
         }
 
-        .navbar a {
+        .navbar a,
+        .nav-btn {
             color: #ffff00;
             text-decoration: none;
             font-size: 0.9rem;
             font-weight: 700;
             padding: 10px 20px;
+            transition: all 0.15s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: inline-block;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            position: relative;
+            background: transparent;
+            border: none;
+            z-index: 1;
+            outline: none;
+        }
+
+        .navbar a::before,
+        .nav-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
             background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
             border: 1px solid #ffff00;
             clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            transition: all 0.15s ease;
+            pointer-events: none;
+            z-index: -1;
         }
 
-        .navbar a:hover {
+        .navbar a:hover,
+        .nav-btn:hover { 
+            transform: translateY(-2px); 
+        }
+        
+        .navbar a:hover::before,
+        .nav-btn:hover::before {
             background: linear-gradient(135deg, #ffff0020, #ffff0010);
-            box-shadow: 
-                0 0 15px #ffff00,
-                inset 0 0 15px #ffff0020;
-            transform: translateY(-2px);
+            box-shadow: 0 0 15px #ffff00, inset 0 0 15px #ffff0020;
+        }
+
+        .navbar a:active,
+        .nav-btn:active {
+            transform: scale(0.95);
+            transition: all 0.05s ease;
+        }
+        
+        .navbar a:active::before,
+        .nav-btn:active::before {
+            box-shadow: inset 0 0 10px rgba(255,255,0,0.3);
+        }
+
+        .navbar a:focus,
+        .nav-btn:focus {
+            outline: none;
+        }
+
+        .navbar a:focus-visible,
+        .nav-btn:focus-visible {
+            outline: 2px solid #ffff00;
+            outline-offset: 3px;
         }
 
         .clock-section {
@@ -193,6 +238,7 @@
             transition: all 0.4s ease;
             position: relative;
             overflow: hidden;
+            outline: none;
         }
 
         .app-card::before {
@@ -204,6 +250,7 @@
             height: 100%;
             background: linear-gradient(90deg, transparent, #00ff4120, transparent);
             transition: left 0.5s;
+            pointer-events: none;
         }
 
         .app-card:hover::before {
@@ -220,7 +267,17 @@
         }
 
         .app-card:active {
-            transform: translateY(-2px) scale(1.01);
+            transform: scale(0.97);
+            transition: all 0.05s ease;
+        }
+
+        .app-card:focus {
+            outline: none;
+        }
+
+        .app-card:focus-visible {
+            outline: 2px solid #ffff00;
+            outline-offset: 4px;
         }
 
         .app-icon {
@@ -283,7 +340,8 @@
                 padding: 15px;
             }
             
-            .navbar a {
+            .navbar a,
+            .nav-btn {
                 font-size: 0.8rem;
                 padding: 8px 16px;
             }
@@ -392,15 +450,15 @@
     </div>
 
     <nav class="navbar">
-        <a href="#" onclick="openApp('todo app.html')">TODO</a>
-        <a href="#" onclick="openApp('feedbacks.html')">FEEDBACK</a>
-        <a href="#" onclick="openApp('rss.html')">RSS</a>
-        <a href="#" onclick="openApp('meteo.html')">MÉTÉO</a>
-        <a href="#" onclick="openApp('toolbox.html')">TOOLBOX</a>
-        <a href="#" onclick="openApp('SimpleTabHTML.html')">SIMPLETAB</a>
-        <a href="#" onclick="openApp('dalyview.html')">DAILY</a>
-        <a href="#" onclick="openApp('https://pomofocus.io/')">POMODORO</a>
-        <a href="#" onclick="openApp('sunset-timer-app.html')">SUNSET</a>
+        <button class="nav-btn" type="button" data-url="todo app.html">TODO</button>
+        <button class="nav-btn" type="button" data-url="feedbacks.html">FEEDBACK</button>
+        <button class="nav-btn" type="button" data-url="rss.html">RSS</button>
+        <button class="nav-btn" type="button" data-url="meteo.html">MÉTÉO</button>
+        <button class="nav-btn" type="button" data-url="toolbox.html">TOOLBOX</button>
+        <button class="nav-btn" type="button" data-url="SimpleTabHTML.html">SIMPLETAB</button>
+        <button class="nav-btn" type="button" data-url="dalyview.html">DAILY</button>
+        <button class="nav-btn" type="button" data-url="https://pomofocus.io/">POMODORO</button>
+        <button class="nav-btn" type="button" data-url="sunset-timer-app.html">SUNSET</button>
 
         <!-- Auth Links -->
         <a id="nav-login" href="login.html">LOGIN</a>
@@ -431,47 +489,47 @@
     </section>
 
     <main class="apps-gallery">
-        <div class="app-card" onclick="openApp('todo app.html')">
+        <div class="app-card" role="button" tabindex="0" data-url="todo app.html">
             <div class="app-icon">📝</div>
             <div class="app-title">Todo</div>
         </div>
 
-        <div class="app-card" onclick="openApp('feedbacks.html')">
+        <div class="app-card" role="button" tabindex="0" data-url="feedbacks.html">
             <div class="app-icon">💬</div>
             <div class="app-title">Feedbacks</div>
         </div>
 
-        <div class="app-card" onclick="openApp('rss.html')">
+        <div class="app-card" role="button" tabindex="0" data-url="rss.html">
             <div class="app-icon">📡</div>
             <div class="app-title">RSS</div>
         </div>
 
-        <div class="app-card" onclick="openApp('meteo.html')">
+        <div class="app-card" role="button" tabindex="0" data-url="meteo.html">
             <div class="app-icon">⛅</div>
             <div class="app-title">Météo</div>
         </div>
 
-        <div class="app-card" onclick="openApp('toolbox.html')">
+        <div class="app-card" role="button" tabindex="0" data-url="toolbox.html">
             <div class="app-icon">🧰</div>
             <div class="app-title">Toolbox</div>
         </div>
 
-        <div class="app-card" onclick="openApp('SimpleTabHTML.html')">
+        <div class="app-card" role="button" tabindex="0" data-url="SimpleTabHTML.html">
             <div class="app-icon">🌐</div>
             <div class="app-title">SimpleTab</div>
         </div>
 
-        <div class="app-card" onclick="openApp('dalyview.html')">
+        <div class="app-card" role="button" tabindex="0" data-url="dalyview.html">
             <div class="app-icon">📅</div>
             <div class="app-title">Daily View</div>
         </div>
 
-        <div class="app-card" onclick="openApp('https://pomofocus.io/')">
+        <div class="app-card" role="button" tabindex="0" data-url="https://pomofocus.io/">
             <div class="app-icon">🍅</div>
             <div class="app-title">Pomodoro</div>
         </div>
 
-        <div class="app-card" onclick="openApp('sunset-timer-app.html')">
+        <div class="app-card" role="button" tabindex="0" data-url="sunset-timer-app.html">
             <div class="app-icon">🌅</div>
             <div class="app-title">Sunset Timer</div>
         </div>
@@ -503,6 +561,32 @@
         function openApp(url) {
             window.open(url, '_blank');
         }
+
+        // Unified navigation handlers
+        document.addEventListener('DOMContentLoaded', () => {
+            // Top navbar buttons
+            document.querySelectorAll('button.nav-btn').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const url = btn.dataset.url;
+                    if (url) openApp(url);
+                });
+            });
+
+            // App cards: click + keyboard (Enter/Space)
+            document.querySelectorAll('.app-card').forEach((card) => {
+                card.addEventListener('click', () => {
+                    const url = card.dataset.url;
+                    if (url) openApp(url);
+                });
+                card.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        const url = card.dataset.url;
+                        if (url) openApp(url);
+                    }
+                });
+            });
+        });
 
         // Raccourcis clavier
         document.addEventListener('keydown', (e) => {
