@@ -82,19 +82,63 @@
       box-shadow: 0 0 20px rgba(255,255,0,0.12);
       position: relative;
     }
-    .entry img { max-width: 100%; height: auto; border-radius: 5px; border: 1px solid #00ff41; margin-top: 5px; box-shadow: 0 0 6px #00ff7a; display: block; }
+    .entry img { max-width: 100%; height: auto; border-radius: 5px; border: 1px solid #00ff41; margin: 5px auto 0; box-shadow: 0 0 6px #00ff7a; display: block; }
 
     .datetime { color: #ffff00; font-size: clamp(0.75rem, 2vw, 0.85rem); margin-bottom: 4px; }
 
     .seeall {
-      display: block; margin: 1.1rem auto 0; background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+      display: none; /* shown via JS when relevant */
+      margin: 1.2rem auto 2rem;
+      background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
       border: 1px solid #ffff00; color: #ffff00; padding: 0.5rem 1.4rem; box-shadow: none; font-size: clamp(0.9rem, 2.5vw, 1rem);
-      cursor: pointer; transition: all .2s ease; width: auto; min-width: 140px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;
+      cursor: pointer; transition: all .2s ease; width: auto; min-width: 160px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;
       clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
     }
     .seeall:hover { background: linear-gradient(135deg, #ffff0020, #ffff0010); box-shadow: 0 0 15px #ffff00, inset 0 0 15px #ffff0020; transform: translateY(-2px); }
 
     ::selection { background: #ff0066; color: #fff; }
+
+    /* Modal editor */
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(4px); }
+    .modal::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,255,65,0.05) 2px,
+        rgba(0,255,65,0.05) 4px
+      );
+      pointer-events: none;
+    }
+    .modal.hidden { display: none; }
+    .modal-content {
+      background: linear-gradient(135deg, #1a1a1a, #0f0f0f);
+      border: 2px solid #00ff41;
+      padding: 1.5rem;
+      width: 90%;
+      max-width: 500px;
+      clip-path: polygon(20px 0%, 100% 0%, calc(100% - 20px) 100%, 0% 100%);
+      box-shadow: 0 0 25px rgba(0,255,65,0.4), inset 0 0 10px rgba(0,255,65,0.1);
+    }
+    .modal-content h2 { color: #ffff00; text-align: center; margin-bottom: 1rem; }
+    .modal-buttons { display: flex; justify-content: space-between; margin-top: 1rem; gap: 10px; }
+
+    /* Stylized file upload */
+    .file-upload { display: flex; align-items: center; margin-bottom: 1rem; }
+    #fileButton {
+      background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+      border: 1px solid #ffff00; color: #ffff00; padding: 10px 16px; cursor: pointer;
+      clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
+      font-family: 'Orbitron', monospace; font-weight: 900; letter-spacing: 1px;
+    }
+    #fileButton:hover { background: linear-gradient(135deg, #ffff0020, #ffff0010); box-shadow: 0 0 12px #ffff00, inset 0 0 12px #ffff0020; }
+
+    /* Inline feedbacks container */
+    .feedbacks-inline { width: 100%; margin-top: 2rem; display: flex; flex-direction: column; gap: 1rem; }
+    .feedbacks-inline .entry { width: 100%; margin: 0 auto; }
 
     /* Hover action buttons on entries */
     .entry-actions { position: absolute; top: 6px; right: 6px; display: flex; gap: 6px; }
@@ -134,7 +178,7 @@
       button { padding: 12px; margin: 0.5rem 0; }
       .feedbacks { padding: 0.8rem; max-height: 40vh; }
       .entry { padding: 0.8rem; margin-bottom: 0.8rem; }
-      .seeall { padding: 0.5rem 1rem; margin: 0.8rem auto 0; }
+      .seeall { padding: 0.5rem 1rem; }
     }
 
     @media (max-width: 320px) {
@@ -182,7 +226,9 @@
       render();
       const seeAllBtn = document.getElementById("seeall");
       if (seeAllBtn) {
-        seeAllBtn.style.display = feedbacks.length === limit && !showingAll ? "block" : "none";
+        const shouldShow = showingAll || feedbacks.length >= 3;
+        seeAllBtn.style.display = shouldShow ? "block" : "none";
+        seeAllBtn.textContent = showingAll ? "Masquer" : "Voir tout";
       }
     }
 
@@ -221,7 +267,7 @@
         const entry = e.currentTarget.closest('.entry');
         const id = entry?.dataset?.id;
         if (!id) return;
-        openEditInline(entry, id);
+        openEditModal(id);
       }));
       box.querySelectorAll('.entry .download').forEach(btn => btn.addEventListener('click', async (e) => {
         const entry = e.currentTarget.closest('.entry');
@@ -243,38 +289,32 @@
       return (window.Utils ? Utils.isImageUrl(urlOrText) : (typeof urlOrText === 'string' && /^https?:\/\/.+\.(jpg|jpeg|png|webp)$/i.test(urlOrText)));
     }
 
-    function openEditInline(entryEl, id) {
+    function openEditModal(id) {
       const fb = feedbacks.find(f => String(f.id) === String(id));
       if (!fb) return;
+      const modal = document.getElementById('editModal');
+      const editText = document.getElementById('editText');
+      const editImg = document.getElementById('editImg');
+      const saveEdit = document.getElementById('saveEdit');
+      const cancelEdit = document.getElementById('cancelEdit');
+
       const currentIsImage = isImage(fb.content);
-      const currentText = currentIsImage ? '' : (fb.content || '');
-      const editor = document.createElement('div');
-      editor.innerHTML = `
-        <div class="editor" style="margin-top:8px; border-top:1px dashed #333; padding-top:8px;">
-          <label style="color:#ffff00;">Modifier le texte :</label>
-          <textarea rows="3" style="width:100%; background:#1a1a1a; color:#fff; border:1px solid #333; padding:10px; clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);">${currentText.replace(/</g,'&lt;')}</textarea>
-          <label style="color:#ffff00;">Ou remplacer par une image :</label>
-          <input type="file" accept="image/png, image/jpeg, image/webp" />
-          <div style="display:flex; gap:8px; margin-top:8px;">
-            <button type="button" class="save" style="width:auto; min-width:120px;">💾 Enregistrer</button>
-            <button type="button" class="cancel" style="width:auto;">Annuler</button>
-          </div>
-        </div>`;
-      const existingEditor = entryEl.querySelector('.editor');
-      if (existingEditor) existingEditor.remove();
-      entryEl.appendChild(editor.firstElementChild);
+      editText.value = currentIsImage ? '' : (fb.content || '');
+      editImg.value = '';
 
-      const textarea = entryEl.querySelector('.editor textarea');
-      const fileInput = entryEl.querySelector('.editor input[type="file"]');
-      const saveBtn = entryEl.querySelector('.editor .save');
-      const cancelBtn = entryEl.querySelector('.editor .cancel');
+      modal.classList.remove('hidden');
 
-      cancelBtn.onclick = () => { entryEl.querySelector('.editor')?.remove(); };
+      const onCancel = () => {
+        modal.classList.add('hidden');
+        saveEdit.onclick = null;
+        cancelEdit.onclick = null;
+      };
 
-      saveBtn.onclick = async () => {
+      cancelEdit.onclick = onCancel;
+      saveEdit.onclick = async () => {
         try {
-          let newContent = textarea.value.trim();
-          const file = fileInput.files[0];
+          let newContent = editText.value.trim();
+          const file = editImg.files[0];
           if (file) {
             if (!window.Utils || typeof Utils.uploadToImgBB !== 'function') {
               alert('Upload indisponible. Utils.uploadToImgBB manquant.');
@@ -290,6 +330,7 @@
             .eq('id', id);
           if (error) throw error;
           await loadFeedbacks(showingAll ? 99 : 3);
+          onCancel();
         } catch (err) {
           console.error('[EDIT] Erreur update:', err);
           alert('Erreur mise à jour: ' + (err?.message || err));
@@ -370,6 +411,18 @@
         [...form.elements].forEach(el => (el.disabled = true));
       }
 
+      // Stylized file upload handlers
+      const fileBtn = document.getElementById('fileButton');
+      const imgUpload = document.getElementById('imgUpload');
+      const fileName = document.getElementById('fileName');
+      if (fileBtn && imgUpload) {
+        fileBtn.onclick = () => imgUpload.click();
+        imgUpload.onchange = (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (fileName) fileName.textContent = file ? file.name : '';
+        };
+      }
+
       // Submit handler
       if (form) {
         form.onsubmit = async (e) => {
@@ -380,7 +433,7 @@
             return;
           }
           const text = document.getElementById("content").value.trim();
-          const imageInput = document.getElementById("img").files[0];
+          const imageInput = document.getElementById("imgUpload").files[0];
           let content = text;
           if (imageInput) {
             try {
@@ -402,6 +455,7 @@
             return;
           }
           form.reset();
+          if (fileName) fileName.textContent = '';
           showingAll = false;
           loadFeedbacks();
         };
@@ -410,8 +464,8 @@
       const seeAllBtn = document.getElementById("seeall");
       if (seeAllBtn) {
         seeAllBtn.onclick = () => {
-          showingAll = true;
-          loadFeedbacks(99);
+          showingAll = !showingAll;
+          loadFeedbacks(showingAll ? 99 : 3);
         };
       }
 
@@ -429,12 +483,31 @@
     <form id="form" autocomplete="off">
       <label for="content">Ton feedback</label>
       <textarea id="content" rows="3" placeholder="Comment s’est passée ta journée ?"></textarea>
-      <label for="img">Ou ajoute une image :</label>
-      <input type="file" id="img" accept="image/png, image/jpeg, image/webp" />
+      <label for="imgUpload">Ajouter des fichiers :</label>
+      <div class="file-upload">
+        <input type="file" id="imgUpload" accept="image/png, image/jpeg, image/webp" hidden />
+        <button type="button" id="fileButton">📁 Choisir un fichier</button>
+        <span id="fileName" style="margin-left:8px; color:#00ff41;"></span>
+      </div>
       <button type="submit">💾 Enregistrer le feedback</button>
     </form>
-    <div class="feedbacks" id="feedbacks"></div>
-    <button class="seeall" id="seeall" style="display: none">Voir tout</button>
+  </div>
+
+  <!-- Inline feedbacks section -->
+  <section id="feedbacks" class="feedbacks-inline"></section>
+  <button class="seeall" id="seeall">Voir tout</button>
+
+  <!-- Edit Modal -->
+  <div id="editModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+    <div class="modal-content">
+      <h2 id="editModalTitle">Modifier le feedback</h2>
+      <textarea id="editText" rows="4" style="width:100%; background:#1a1a1a; color:#fff; border:1px solid #333; padding:10px; clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);"></textarea>
+      <input type="file" id="editImg" accept="image/png, image/jpeg, image/webp" style="margin-top:10px;" />
+      <div class="modal-buttons">
+        <button id="saveEdit">💾 Enregistrer</button>
+        <button id="cancelEdit">Annuler</button>
+      </div>
+    </div>
   </div>
 </body>
 </html>
