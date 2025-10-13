@@ -37,3 +37,8 @@ git push
 ## Notes
 - `core.autocrlf` a été configuré sur `true` (Windows) pour gérer CRLF/LF.
 - Si Git demande une auth, finalise-la dans le navigateur (GitHub) puis relance la commande.
+
+## Script d'automatisation Git
+```powershell
+./git_auto_push.ps1 -Message "message"
+```
