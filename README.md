@@ -1,5 +1,6 @@
 # CYBER PRODUCTIVITY HUB
 > Tableau de bord centralisé au style cyberpunk pour accéder à diverses applications de productivité.
+> Ceci est la version de test du produit
 
 ## 🧩 Aperçu
 
@@ -49,8 +50,8 @@ root/
 ## 🚀 Installation
 
 ```bash
-git clone <repo-url>
-cd cyber-productivity-hub
+git clone https://github.com/Tahlasandale/preprodhub
+cd preprodhub
 # Ouvrir le fichier index.html dans un navigateur
 ```
 
