@@ -106,24 +106,53 @@
     let completedCount = 0;
     let CURRENT_USER_ID = null;
     let completedTasks = [];
+    // TAGS_MODE: 'array' -> column `tags` (array/json), 'csv' -> column `tag` (text), 'none' -> no tags column
+    let TAGS_MODE = null;
+
+    async function detectTagsMode() {
+      if (TAGS_MODE) return TAGS_MODE;
+      // Try `tags` first (array/json)
+      try {
+        const tryArray = await window.sb.from(TABLE).select('tags').limit(1);
+        if (!tryArray.error) { TAGS_MODE = 'array'; return TAGS_MODE; }
+      } catch (_) {}
+      // Then try `tag` (single text)
+      try {
+        const tryCsv = await window.sb.from(TABLE).select('tag').limit(1);
+        if (!tryCsv.error) { TAGS_MODE = 'csv'; return TAGS_MODE; }
+      } catch (_) {}
+      TAGS_MODE = 'none';
+      return TAGS_MODE;
+    }
 
     async function loadTasks() {
       if (!window.sb || !CURRENT_USER_ID) return;
       try {
+        const mode = await detectTagsMode();
+        const fields = mode === 'array' ? 'id, title, completed, "order", tags'
+                     : mode === 'csv'   ? 'id, title, completed, "order", tag'
+                                        : 'id, title, completed, "order"';
         const { data, error } = await window.sb
           .from(TABLE)
-          .select('id, title, completed, "order"')
+          .select(fields)
           .eq('user_id', CURRENT_USER_ID)
           .order('order', { ascending: true });
 
         if (error) throw error;
         const all = data || [];
-        tasks = all.filter(t => !t.completed).map(row => ({ id: row.id, title: row.title, order: row.order }));
-        completedTasks = all.filter(t => t.completed).map(row => ({ id: row.id, title: row.title, order: row.order }));
+        const mapTags = (row) => {
+          if (mode === 'array') return Array.isArray(row.tags) ? row.tags : [];
+          if (mode === 'csv') return typeof row.tag === 'string' && row.tag.length
+            ? row.tag.split(',').map(s => s.trim()).filter(Boolean)
+            : [];
+          return [];
+        };
+        tasks = all.filter(t => !t.completed).map(row => ({ id: row.id, title: row.title, order: row.order, tags: mapTags(row) }));
+        completedTasks = all.filter(t => t.completed).map(row => ({ id: row.id, title: row.title, order: row.order, tags: mapTags(row) }));
         completedCount = completedTasks.length;
         render();
       } catch (err) {
-        console.error('[LOAD] Erreur:', err);
+        console.error('[LOAD] Erreur:', err?.message || err);
       }
     }
 
@@ -132,14 +161,35 @@
       const counter = document.getElementById('counter');
       counter.textContent = `Tâches terminées : ${completedCount}`;
 
-      if (!tasks.length) {
+      // Filter by selected tag (active tasks only)
+      const filterEl = document.getElementById('filter-tags');
+      const selectedTag = filterEl ? filterEl.value : '';
+      const filteredTasks = selectedTag
+        ? tasks.filter(t => Array.isArray(t.tags) && t.tags.includes(selectedTag))
+        : tasks;
+
+      // Generate tag options dynamically from all tasks (active + completed)
+      if (filterEl) {
+        const allTags = new Set();
+        tasks.forEach(t => (t.tags || []).forEach(tag => allTags.add(tag)));
+        completedTasks.forEach(t => (t.tags || []).forEach(tag => allTags.add(tag)));
+        const current = filterEl.value;
+        filterEl.innerHTML = '<option value="">Toutes les tâches</option>' +
+          Array.from(allTags)
+            .sort((a,b) => a.localeCompare(b))
+            .map(tag => `<option value="${tag}" ${current===tag?'selected':''}>${tag}</option>`) 
+            .join('');
+      }
+
+      if (!filteredTasks.length) {
         list.innerHTML = '<li>Aucune tâche à faire 🎉</li>';
       } else {
-        list.innerHTML = tasks.map(
+        list.innerHTML = filteredTasks.map(
           t => `
           <li draggable="true" data-id="${t.id}">
             <input type="checkbox" data-id="${t.id}">
             <label>${t.title}</label>
+            <span class="tags">${Array.isArray(t.tags) && t.tags.length ? t.tags.join(', ') : ''}</span>
           </li>`
         ).join('');
       }
@@ -157,7 +207,7 @@
             if (error) throw error;
             loadTasks();
           } catch (err) {
-            console.error('[UPDATE] Erreur:', err);
+            console.error('[UPDATE] Erreur:', err?.message || err);
           }
         };
       });
@@ -175,6 +225,7 @@
             <li data-id="${t.id}">
               <input type="checkbox" data-id="${t.id}" checked>
               <label>${t.title}</label>
+              <span class=\"tags\">${Array.isArray(t.tags) && t.tags.length ? t.tags.join(', ') : ''}</span>
             </li>
           `).join('');
 
@@ -191,7 +242,7 @@
                 if (error) throw error;
                 loadTasks();
               } catch (err) {
-                console.error('[UNCOMPLETE] Erreur:', err);
+                console.error('[UNCOMPLETE] Erreur:', err?.message || err);
               }
             };
           });
@@ -199,21 +250,27 @@
       }
     }
 
-    async function addTask(title) {
+    async function addTask(title, tagsText) {
       if (!window.sb || !CURRENT_USER_ID) return;
       try {
         // find current max order
         const maxOrder = tasks.length ? Math.max(...tasks.map(t => t.order || 0)) : 0;
         const newOrder = maxOrder + 1;
 
+        const tags = (tagsText || '').split(',').map(t => t.trim()).filter(Boolean);
+        const mode = await detectTagsMode();
+        const payload = { title, completed: false, order: newOrder, user_id: CURRENT_USER_ID };
+        if (mode === 'array') payload.tags = tags;
+        if (mode === 'csv') payload.tag = tags.join(', ');
+
         const { error } = await window.sb
           .from(TABLE)
-          .insert([{ title, completed: false, order: newOrder, user_id: CURRENT_USER_ID }]);
+          .insert([payload]);
 
         if (error) throw error;
         loadTasks();
       } catch (err) {
-        console.error('[INSERT] Erreur:', err);
+        console.error('[INSERT] Erreur:', err?.message || err);
       }
     }
 
@@ -265,9 +322,15 @@
       document.getElementById('form').onsubmit = (e) => {
         e.preventDefault();
         const title = document.getElementById('content').value.trim();
-        if (title) addTask(title);
+        const tags = document.getElementById('tags').value.trim();
+        if (title) addTask(title, tags);
         e.target.reset();
       };
+      // Filter change -> re-render only
+      const filterEl = document.getElementById('filter-tags');
+      if (filterEl) {
+        filterEl.addEventListener('change', () => render());
+      }
       // Toggle completed section visibility
       const toggleBtn = document.getElementById('toggle-completed');
       const completedSection = document.getElementById('completed-section');
@@ -294,8 +357,12 @@
   <div id="counter" class="counter">Tâches terminées : 0</div>
   <form id="form" autocomplete="off">
     <input type="text" id="content" placeholder="Nouvelle tâche..." />
+    <input type="text" id="tags" placeholder="Tags (séparés par des virgules)" />
     <button type="submit">Ajouter</button>
   </form>
+  <select id="filter-tags">
+    <option value="">Toutes les tâches</option>
+  </select>
   <ul id="tasks"></ul>
   <button id="toggle-completed" type="button">Afficher tâches terminées</button>
   <div id="completed-section" style="display:none">
