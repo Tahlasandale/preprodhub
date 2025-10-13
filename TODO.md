@@ -5,7 +5,8 @@ generated_at: 2025-10-09T12:00:00Z
 
 ## court terme
 
-- [ ] Ajouter la capacité d’éditer les notes et les feedbacks
+- [ ] police de la navbar
+- [ ] Ajouter la capacité d’éditer les feedbacks
 - [ ] Ajouter de l’OCR dans le feedback
 - [ ] Mieux intégrer le TTS, l’OCR et l’écriture au module Feedback
 

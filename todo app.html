@@ -77,12 +77,20 @@
       background: linear-gradient(135deg, #2a2a2a, #1f1f1f);
       border-left: 3px solid #ffff00;
       clip-path: polygon(15px 0%, 100% 0%, calc(100% - 15px) 100%, 0% 100%);
-      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+      transition: transform .4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow .4s cubic-bezier(0.22, 1, 0.36, 1), border-color .4s cubic-bezier(0.22, 1, 0.36, 1);
     }
     li:hover { transform: translateX(4px); box-shadow: 0 0 20px rgba(255,255,0,0.15); border-left-color: #ff0066; }
     li.dragging { opacity: 0.6; }
     li input[type="checkbox"] { transform: scale(1.1); accent-color: #00ff41; }
     li label { flex: 1; cursor: pointer; user-select: none; color: #00ff41; letter-spacing: .5px; }
+
+    /* Edit button on hover (smooth reveal) */
+    li { position: relative; }
+    .edit-btn { display: inline-block; background: transparent; border: none; color: #ffff00; cursor: pointer; margin-left: 8px; font-size: 0.9rem; 
+      opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(2px) scale(0.96);
+      transition: opacity .35s cubic-bezier(0.22, 1, 0.36, 1), transform .35s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear .35s; }
+    li:hover .edit-btn { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0) scale(1); transition-delay: 0s; }
+    .edit-btn:hover { transform: translateY(-1px) scale(1.02); }
 
     @media (max-width: 480px) {
       body { padding: 16px; }
@@ -93,6 +101,42 @@
 
     @keyframes slideInUp { from { opacity: 0; transform: translateY(40px) scale(0.98);} to { opacity: 1; transform: translateY(0) scale(1);} }
     @keyframes glitch { 0%{transform:translate(0);}20%{transform:translate(-2px,2px);}40%{transform:translate(-2px,-2px);}60%{transform:translate(2px,2px);}80%{transform:translate(2px,-2px);}100%{transform:translate(0);} }
+
+    /* Filter select styling */
+    #filter-tags {
+      width: 100%;
+      max-width: 640px;
+      margin-bottom: 24px;
+      padding: 12px;
+      background: #1a1a1a;
+      border: 2px solid #00ff41;
+      color: #00ff41;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      clip-path: polygon(10px 0%, 100% 0%, calc(100% - 10px) 100%, 0% 100%);
+      transition: all 0.3s ease;
+      box-shadow: inset 0 0 12px rgba(0, 255, 65, 0.08);
+      cursor: pointer;
+    }
+
+    #filter-tags:hover {
+      background: #151515;
+      box-shadow: 0 0 12px rgba(0, 255, 65, 0.15), inset 0 0 8px rgba(0, 255, 65, 0.1);
+    }
+
+    #filter-tags:focus {
+      outline: none;
+      border-color: #ffff00;
+      box-shadow: 0 0 15px #ffff0050, inset 0 0 10px rgba(255, 255, 0, 0.15);
+    }
+
+    #filter-tags option {
+      background: #0f0f0f;
+      color: #00ff41;
+      font-family: 'Orbitron', monospace;
+    }
   </style>
   <!-- Use shared Supabase and auth helpers (consistent with the project) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -154,6 +198,30 @@
       } catch (err) {
         console.error('[LOAD] Erreur:', err?.message || err);
       }
+
+      // Edit button handler (active tasks only)
+      document.querySelectorAll('#tasks .edit-btn').forEach(btn => {
+        btn.onclick = async (e) => {
+          const li = e.currentTarget.closest('li');
+          const id = li?.dataset?.id;
+          const label = li?.querySelector('label');
+          const oldTitle = label ? label.textContent : '';
+          const newTitle = window.prompt('Modifier la tâche :', oldTitle);
+          const trimmed = (newTitle || '').trim();
+          if (!id || !trimmed || trimmed === oldTitle) return;
+          try {
+            const { error } = await window.sb
+              .from(TABLE)
+              .update({ title: trimmed })
+              .eq('id', id)
+              .eq('user_id', CURRENT_USER_ID);
+            if (error) throw error;
+            loadTasks();
+          } catch (err) {
+            console.error('[EDIT] Erreur:', err?.message || err);
+          }
+        };
+      });
     }
 
     function render() {
@@ -190,6 +258,7 @@
             <input type="checkbox" data-id="${t.id}">
             <label>${t.title}</label>
             <span class="tags">${Array.isArray(t.tags) && t.tags.length ? t.tags.join(', ') : ''}</span>
+            <button class="edit-btn" type="button" aria-label="Editer la tâche">✏️</button>
           </li>`
         ).join('');
       }
