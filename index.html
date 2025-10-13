@@ -554,12 +554,20 @@
             const dateStr = now.toLocaleDateString('fr-FR', options).toUpperCase();
             document.getElementById('date').textContent = dateStr;
         }
-
         updateClock();
         setInterval(updateClock, 1000);
 
-        function openApp(url) {
-            window.open(url, '_blank');
+        function openApp(url, newTab = false) {
+            if (!url) return;
+            if (newTab) {
+                window.open(url, '_blank', 'noopener');
+            } else {
+                window.location.href = url;
+            }
+        }
+
+        function isExternal(url) {
+            return /^https?:\/\//i.test(url);
         }
 
         // Unified navigation handlers
@@ -568,7 +576,8 @@
             document.querySelectorAll('button.nav-btn').forEach((btn) => {
                 btn.addEventListener('click', () => {
                     const url = btn.dataset.url;
-                    if (url) openApp(url);
+                    const newTab = isExternal(url);
+                    openApp(url, newTab);
                 });
             });
 
@@ -576,19 +585,21 @@
             document.querySelectorAll('.app-card').forEach((card) => {
                 card.addEventListener('click', () => {
                     const url = card.dataset.url;
-                    if (url) openApp(url);
+                    const newTab = isExternal(url);
+                    openApp(url, newTab);
                 });
                 card.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
                         const url = card.dataset.url;
-                        if (url) openApp(url);
+                        const newTab = isExternal(url);
+                        openApp(url, newTab);
                     }
                 });
             });
         });
 
-        // Raccourcis clavier
+        // Raccourcis clavier Ctrl+1..6
         document.addEventListener('keydown', (e) => {
             if (e.ctrlKey) {
                 switch(e.key) {

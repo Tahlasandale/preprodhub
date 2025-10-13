@@ -42,3 +42,4 @@ git push
 ```powershell
 ./git_auto_push.ps1 -Message "message"
 ```
+/giiit dans cascade pour auto commit et push

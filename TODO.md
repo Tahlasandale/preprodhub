@@ -6,7 +6,7 @@ generated_at: 2025-10-09T12:00:00Z
 ## 🔥 Priority: High
 
 - [ ] Optimiser le workflow IA
-- [ ] Pk les modules suvrent ds une autre fenetre?
+- [ ] uniformiser la reaction au logout: modale de rappel et redirection vers la page de login
 - [ ] Modulariser le projet
 - [ ] Ajouter tags à la TODO et trier par tags
 - [ ] Pouvoir afficher les tâches terminées
