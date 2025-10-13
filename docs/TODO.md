@@ -5,10 +5,10 @@ generated_at: 2025-10-09T12:00:00Z
 
 ## court terme
 - [ ] modifier un feedback ca doit se faire via une modale
-- [ ] csss de simpletabhtml et de bouton ajouter fichiers dans feedback
+- [ ]css de bouton ajouter fichiers dans feedback
 - [ ] pk les feedbacks sont dans une boite et p s direct sur la page
-- [ ] centraliser le css en 1 seul fichier
 - [ ] police de la navbar
+- [ ] Simple Tab HTML toolbar  toujours affichee,pas que ne cas de zoom, et eclaircir ses couleurs, et virer le bouton pour masquer la toolbar
 - [ ] Ajouter de l’OCR dans le feedback
 - [ ] Mieux intégrer le TTS, l’OCR et l’écriture au module Feedback
 - [ ] Section "Objectifs Long Terme" a rendre personnalisable  
@@ -25,6 +25,7 @@ generated_at: 2025-10-09T12:00:00Z
 
 ## long terme
 - [ ] MAJ readme
+- [ ] centraliser le css en 1 seul fichier
 - [ ] Modulariser le projet
 - [ ] Faire un bilan sécurité complet (frontend et backend)
 - [ ] Ajouter un cloud
