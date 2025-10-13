@@ -1,152 +1,137 @@
-# MaGazette — Feedbacks personnels avec Auth Supabase
+```markdown
+# CYBER PRODUCTIVITY HUB
+> Tableau de bord centralisé au style cyberpunk pour accéder à diverses applications de productivité.
 
-Un mini-outil web pour capturer rapidement ton ressenti en fin de journée (texte ou photo manuscrite), le stocker de manière sécurisée via Supabase, et le revoir plus tard. L’objectif: rendre le feedback quotidien simple, rapide et personnel, avec une esthétique cyberpunk.
+## 🧩 Aperçu
 
-## Pitch
-- **[Simple]** Une page pour écrire un feedback ou téléverser une image (scan/écriture manuscrite) en 10 secondes.
-- **[Sécurisé]** Tes données sont privées. Authentification par Supabase et politiques RLS: tu ne vois que tes feedbacks.
-- **[Accessible]** 100% client-side, aucune infra à maintenir. Tu peux l’héberger statiquement (GitHub Pages, Netlify, etc.).
+**CYBER PRODUCTIVITY HUB** est une interface web en HTML, CSS et JavaScript permettant de regrouper plusieurs applications de productivité dans un même espace.  
+Il propose une navigation rapide entre différentes pages (Todo, Feedbacks, RSS, Météo, etc.), un affichage dynamique de l’heure et de la date, ainsi qu’un système d’authentification intégré via **Supabase**.
 
----
+## ⚙️ Fonctionnalités
 
-## Fonctionnalités clés
-- **[Auth utilisateur]** via Supabase (`js/auth.js`, `js/supabaseClient.js`).
-- **[Feedback texte ou image]** image uploadée vers ImgBB, l’URL est stockée.
-- **[Filtrage par utilisateur]** lecture/écriture sur la table `Feedbaaack` scellée par RLS.
-- **[UI réactive]** formulaire désactivé si non connecté, rafraîchissement auto à la connexion/déconnexion.
+- 🕒 Horloge et date dynamiques en temps réel  
+- 🧭 Barre de navigation avec accès rapide aux applications  
+- 💾 Intégration **Supabase** pour la gestion de l’authentification  
+- 🧠 Section "Objectifs Long Terme" personnalisable  
+- ⚡ Navigation clavier (raccourcis Ctrl+1 à Ctrl+6)  
+- 🎨 Design cyberpunk animé avec effets visuels (glitch, pulse, survol lumineux)  
+- 📱 Interface responsive adaptée aux mobiles et tablettes  
+- 🔐 Gestion des états utilisateurs : connexion, inscription, compte, déconnexion  
 
----
-
-## Structure des fichiers
-- `feedbacks.html` — Interface de création/lecture des feedbacks.
-- `js/supabaseClient.js` — Initialisation du client Supabase v2 (expose `window.sb`).
-- `js/auth.js` — Helpers d’auth (login/logout/signup, session, nav dynamique).
-- `login.html` / `register.html` — Pages d’auth correspondantes.
-- `index.html` — Page d’accueil (peut lier vers `feedbacks.html`).
-
----
-
-## Base de données (Supabase)
-Table: `Feedbaaack`
-
-Colonnes:
-- `id bigint` (PK, identity recommandé)
-- `created_at timestamp with time zone` (default `now()` recommandé)
-- `content text` (texte libre ou URL de l’image ImgBB)
-- `user_id uuid` (référence l’utilisateur authentifié)
-
-Exemple SQL (à adapter):
-```sql
-create table if not exists public."Feedbaaack" (
-  id bigint generated always as identity primary key,
-  created_at timestamptz not null default now(),
-  content text not null,
-  user_id uuid not null references auth.users(id)
-);
-
-alter table public."Feedbaaack" enable row level security;
-
--- Lecture: l'utilisateur ne voit que ses lignes
-create policy "select_own_feedbacks"
-  on public."Feedbaaack"
-  for select
-  using (user_id = auth.uid());
-
--- Insertion: l'utilisateur ne peut insérer que pour lui-même
-create policy "insert_own_feedbacks"
-  on public."Feedbaaack"
-  for insert
-  with check (user_id = auth.uid());
+## 🏗️ Structure du projet
 ```
 
----
+root/
+├── index.html
+├── js/
+│   ├── supabaseClient.js
+│   ├── utils.js
+│   └── auth.js
+├── favicon.png
+├── todo app.html
+├── feedbacks.html
+├── rss.html
+├── meteo.html
+├── toolbox.html
+├── SimpleTabHTML.html
+├── dalyview.html
+├── sunset-timer-app.html
+└── [autres fichiers...]
 
-## Dépendances externes
-- Supabase JS v2 (via CDN intégré dans `feedbacks.html`).
-- ImgBB (upload image client-side, clé API requise).
+````
 
----
+## 🚀 Installation
 
-## Configuration
-1. **Supabase**
-   - Récupère l’URL et l’Anon Key de ton projet.
-   - Ouvre `js/supabaseClient.js` et mets à jour:
-     ```js
-     window.SUPABASE_CONFIG = {
-       url: "https://<YOUR_PROJECT>.supabase.co",
-       anonKey: "<YOUR_ANON_KEY>"
-     };
-     ```
-   - Vérifie les policies RLS de `Feedbaaack` (voir section SQL ci-dessus).
+```bash
+git clone <repo-url>
+cd cyber-productivity-hub
+# Ouvrir le fichier index.html dans un navigateur
+````
 
-2. **ImgBB** (optionnel mais recommandé pour les images)
-   - Crée une clé sur imgbb.com, remplace `IMGBB_API_KEY` dans `feedbacks.html`.
+Aucune installation de dépendances locale n’est nécessaire — tout fonctionne côté client via le navigateur.
 
----
+## 🧠 Utilisation
 
-## Utilisation
-- Ouvre `login.html` pour te connecter ou `register.html` pour créer un compte.
-- Va sur `feedbacks.html`.
-  - Si non connecté: formulaire désactivé + message.
-  - Si connecté: saisis du texte ou upload une image (png/jpeg/webp).
-  - Clique sur "Sauvegarder feedback".
-  - Parcours tes derniers feedbacks, puis "Voir tout" pour charger plus.
+1. Ouvrir `index.html` dans un navigateur moderne.
+2. Naviguer entre les différentes applications via :
 
-Notes:
-- Les feedbacks affichés sont uniquement ceux du compte connecté (filtrage `.eq("user_id", session.user.id)`).
-- Les images sont hébergées chez ImgBB; seule l’URL est stockée en base.
+   * La barre supérieure (boutons)
+   * Les cartes interactives
+   * Les raccourcis clavier :
 
----
+     * **Ctrl+1** → Todo
+     * **Ctrl+2** → Feedbacks
+     * **Ctrl+3** → RSS
+     * **Ctrl+4** → Météo
+     * **Ctrl+5** → Pomodoro
+     * **Ctrl+6** → Sunset Timer
+3. Les liens externes s’ouvrent automatiquement dans un nouvel onglet.
 
-## Outil: Sunset Timer
+## 🧪 Tests
 
-`sunset-timer-app.html` est un organiseur de tâches avec minuteur élégant, pensé pour des sessions focalisées type pomodoro mais flexibles.
+- **Navigation**: tous les modules internes s’ouvrent dans le même onglet. Liens externes (ex. Pomodoro) → nouvel onglet.
+- **Raccourcis**: `Ctrl+1..6` ouvrent les pages indiquées dans `index.html`.
+- **Auth**: navbar réagit à la connexion/déconnexion via `js/auth.js`.
+- **Todo** (`todo app.html`):
+  - Ajout de tâches (ordre persistant via champ `order`).
+  - Section "Tâches terminées" + bouton afficher/cacher (cachée par défaut).
+  - Case à cocher déplace vers terminées; décocher la case dans terminées réintègre la tâche.
+  - Édition du titre via bouton ✏️ survol (mise à jour Supabase).
+  - Drag & Drop actif uniquement sur la liste des tâches actives; ordre sauvegardé.
+  - Tags: champ de saisie + filtre par tag. Le client gère deux schémas possibles:
+    - `tags` (array/json)
+    - `tag` (texte CSV)
+    Détection automatique et adaptation des requêtes.
 
-- **[Accès]** Depuis `index.html`:
-  - Navbar: bouton "SUNSET"
-  - Galerie: carte "Sunset Timer" (icône 🌅)
-  - Raccourci clavier: `Ctrl + 6`
+## 🔧 Configuration
 
-- **[Fonctionnalités]**
-  - Liste de tâches avec titre et durée (en minutes)
-  - Minuteur visuel avec barre de progression
-  - Démarrer / Pause / Stop, enchaînement auto optionnel
-  - Réglages: son, auto-start, notifications
-  - Import CSV des tâches
-  - Persistance locale (localStorage)
+Le projet utilise **Supabase** (CDN) et un initialiseur dédié `js/supabaseClient.js`.
 
-- **[Utilisation]**
-  1. Ajoute une tâche (titre + durée)
-  2. Clique "Démarrer", puis utilise Pause/Stop si besoin
-  3. Active les notifications si nécessaire (bouton dédié)
-  4. Réorganise tes tâches par drag & drop
+- Dans `index.html`/pages, le CDN est chargé:
+  - `<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>`
+  - `<script src="js/supabaseClient.js"></script>`
 
-Cet outil est autonome (pas d’auth ni de backend requis) et peut coexister avec les autres apps du hub.
+- Renseigner vos identifiants dans `js/supabaseClient.js`:
+  ```javascript
+  window.SUPABASE_CONFIG = {
+    url: 'https://<YOUR-PROJECT>.supabase.co',
+    anonKey: '<YOUR-ANON-KEY>'
+  };
+  // Le fichier crée window.sb = createClient(url, anonKey)
+  ```
 
-## Sécurité et bonnes pratiques
-- N’expose jamais une Service Role Key côté client.
-- L’`anonKey` est publique mais les permissions sont **strictement** contrôlées par RLS.
-- Valide les entrées utilisateur si tu ajoutes d’autres champs.
+Autres fichiers utiles:
 
----
+- `js/auth.js` → helpers d’auth (login/register/logout, session, navbar)
+- `js/utils.js` → utilitaires (ex: formatage d’heure)
 
-## Déploiement
-- Héberge statiquement (GitHub Pages, Netlify, Vercel static, etc.).
-- Les pages/JS doivent pouvoir charger le CDN Supabase.
-- Si tu changes de domaine, rien à reconfigurer côté Supabase (auth par token côté client) tant que l’URL projet est bonne.
+## 📦 Dépendances
 
----
+* [Supabase JS v2](https://supabase.com/docs/reference/javascript)
+* Polices Google : **Orbitron**
+* Aucune dépendance côté serveur
 
-## Dépannage
-- Rien ne se charge dans `feedbacks.html`:
-  - Vérifie que `@supabase/supabase-js@2`, `js/supabaseClient.js` et `js/auth.js` sont bien inclus.
-  - Ouvre la console: erreurs d’auth/URL/keys.
-- Insertion refusée:
-  - Vérifie les policies RLS et que `user_id` = `auth.uid()`.
-- Images non visibles:
-  - Clé ImgBB invalide, quota atteint, ou URL non accessible.
+## 🤝 Contribution
 
----
+Les contributions sont les bienvenues :
 
-## Licence
-Voir `LICENSE`.
+```bash
+# Forker le dépôt
+# Créer une branche de fonctionnalité
+git checkout -b feature/nouvelle-fonctionnalite
+
+# Commit des modifications
+git commit -m "Ajout d'une nouvelle fonctionnalité"
+
+# Pousser la branche
+git push origin feature/nouvelle-fonctionnalite
+
+# Ouvrir une Pull Request
+```
+
+## 🪪 Licence
+
+Ce projet est distribué sous **The Unlicense** (domaine public). Voir `LICENSE`.
+
+```
+```

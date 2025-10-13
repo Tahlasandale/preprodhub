@@ -7,4 +7,4 @@ analyse the code and find an accuratename for the commit to replace "message" in
 
 ./git_auto_push.ps1 -Message "message"
 
-then execute this command
+then return this command in the conversation
