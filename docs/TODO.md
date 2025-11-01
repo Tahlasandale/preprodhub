@@ -4,6 +4,7 @@ generated_at: 2025-10-09T12:00:00Z
 ---
 
 ## court terme
+- [ ] virer supabase parce que sans abonnement pro il fait des pauses du projet et du coup ça rend toutes les bases de données inaccessibles
 - [ ] police de la navbar
 - [ ] Simple Tab HTML toolbar  toujours affichee,pas que ne cas de zoom, et eclaircir ses couleurs, et virer le bouton pour masquer la toolbar
 - [ ] Ajouter de l’OCR dans le feedback
